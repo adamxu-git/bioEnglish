@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIOSPELL</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'IBM Plex Mono','Menlo','Courier New',monospace;
+  background:#e8e4dd;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:#1a1a1a;
+  position:relative;
+  overflow-x:hidden;
+}
+.container{text-align:center;padding:30px 20px;max-width:720px;width:100%;position:relative;z-index:2;}
+h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
+.subtitle{color:#999;margin-bottom:28px;font-size:0.75em;letter-spacing:0.15em;}
+
+#confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;}
+
+.progress-bar{display:flex;justify-content:center;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+.dot{
+  width:22px;height:22px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.65em;font-weight:700;
+  background:#d0ccc5;border:2px solid #aaa;
+  transition:all 0.2s;position:relative;
+}
+.dot.pending{background:#d0ccc5;border-color:#b5b0a8;color:#999;}
+.dot.current{background:#faf8f4;border-color:#1a1a1a;color:#1a1a1a;box-shadow:0 0 0 3px #1a1a1a;cursor:default;}
+.dot.correct-dot{background:#1a1a1a;border-color:#1a1a1a;color:#faf8f4;}
+.dot.wrong-dot{background:#faf8f4;border-color:#c44;color:#c44;}
+.dot:hover:not(.current){transform:scale(1.2);}
+
+.score-board{margin-bottom:16px;font-size:0.85em;color:#888;letter-spacing:0.08em;}
+.score-board b{color:#1a1a1a;font-size:1.2em;}
+
+.word-card{
+  background:#faf8f4;border:2px solid #1a1a1a;border-radius:2px;
+  padding:32px 24px;margin-bottom:20px;min-height:200px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:all 0.4s;
+}
+.word-card.correct-flash{
+  background:#1a1a1a !important;
+  border-color:#1a1a1a;
+  animation:correctPulse 0.6s ease;
+}
+.word-card.correct-flash .lesson-tag{color:#faf8f4 !important;border-color:#faf8f4 !important;}
+.word-card.correct-flash .definition{color:#ccc !important;}
+.word-card.correct-flash .letter-box.revealed{color:#faf8f4 !important;border-color:#faf8f4 !important;}
+.word-card.wrong-flash{
+  animation:shake 0.4s ease;
+}
+@keyframes correctPulse{
+  0%{transform:scale(1);}
+  30%{transform:scale(1.03);}
+  60%{transform:scale(1);}
+  100%{transform:scale(1);}
+}
+@keyframes shake{
+  0%,100%{transform:translateX(0);}
+  20%,60%{transform:translateX(-6px);}
+  40%,80%{transform:translateX(6px);}
+}
+.lesson-tag{
+  display:inline-block;color:#1a1a1a;padding:3px 12px;
+  border:1.5px solid #1a1a1a;border-radius:2px;font-size:0.72em;
+  margin-bottom:14px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;
+}
+.definition{font-size:1em;line-height:1.75;color:#444;}
+.translate-btn{
+  display:inline-block;margin-top:10px;padding:3px 10px;font-size:0.72em;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;
+  border:1px solid #b5b0a8;border-radius:2px;background:transparent;
+  color:#888;cursor:pointer;text-transform:uppercase;transition:all 0.15s;
+}
+.translate-btn:hover{border-color:#1a1a1a;color:#1a1a1a;background:#1a1a1a;color:#faf8f4;}
+.cn-def{font-size:0.92em;line-height:1.7;color:#666;margin-top:8px;display:none;text-align:left;padding:8px 0 0;border-top:1px dashed #d0ccc5;}
+.cn-def.show{display:block;}
+
+.letter-hint{display:flex;justify-content:center;gap:5px;margin-bottom:14px;flex-wrap:wrap;}
+.letter-box{
+  width:22px;height:30px;border-bottom:2.5px solid #b5b0a8;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.95em;color:#ccc;font-weight:600;transition:all 0.2s;
+}
+.letter-box.space{width:12px;border-bottom-color:transparent;}
+.letter-box.revealed{color:#1a1a1a;border-color:#1a1a1a;}
+.letter-box.typed{color:#1a1a1a;border-color:#888;}
+
+/* Result overlay */
+.result-overlay{display:none;width:100%;flex-direction:column;align-items:center;justify-content:center;min-height:140px;}
+.result-overlay.show{display:flex;}
+.result-verdict{
+  font-size:0.8em;letter-spacing:0.3em;font-weight:700;margin-bottom:10px;
+  padding:4px 16px;border-radius:2px;
+}
+.result-verdict.correct-verdict{color:#2a7a2a;border:2px solid #2a7a2a;}
+.result-verdict.wrong-verdict{color:#c44;border:2px solid #c44;}
+.result-word-big{font-size:2.2em;font-weight:700;letter-spacing:0.08em;margin-bottom:8px;}
+.result-word-big.correct-green{color:#2a7a2a;}
+.result-your-answer{font-size:0.9em;color:#999;margin-bottom:6px;}
+.result-your-answer span{text-decoration:line-through;color:#b5b0a8;}
+.result-correct-answer{font-size:1.8em;font-weight:700;color:#2a7a2a;letter-spacing:0.06em;margin:4px 0;}
+.result-def{font-size:0.82em;color:#888;margin-top:10px;line-height:1.5;font-style:italic;text-align:center;max-width:500px;}
+.result-cn{font-size:0.8em;color:#999;margin-top:4px;line-height:1.4;text-align:center;max-width:500px;}
+
+.input-area{display:flex;gap:10px;justify-content:center;align-items:center;margin-bottom:16px;}
+.input-area input{
+  flex:1;max-width:380px;padding:12px 16px;font-size:1.05em;
+  font-family:'IBM Plex Mono',monospace;border:2px solid #b5b0a8;border-radius:2px;
+  background:#faf8f4;color:#1a1a1a;outline:none;text-align:center;
+  letter-spacing:0.05em;transition:border-color 0.2s;
+}
+.input-area input:focus{border-color:#1a1a1a;}
+.input-area input:disabled{opacity:0.5;}
+
+.btn{
+  padding:12px 22px;font-size:0.85em;font-family:'IBM Plex Mono',monospace;
+  border:2px solid #1a1a1a;border-radius:2px;cursor:pointer;
+  background:#1a1a1a;color:#faf8f4;transition:all 0.15s;
+  letter-spacing:0.08em;text-transform:uppercase;font-weight:600;
+}
+.btn:hover{background:#444;}
+.btn:disabled{opacity:0.3;cursor:not-allowed;}
+.btn:disabled:hover{background:#1a1a1a;}
+.btn-outline{background:#faf8f4;color:#1a1a1a;}
+.btn-outline:hover{background:#1a1a1a;color:#faf8f4;}
+
+/* Review panel */
+.review-panel{
+  display:none;background:#faf8f4;border:2px solid #1a1a1a;border-radius:2px;
+  padding:24px;margin-bottom:16px;text-align:center;
+}
+.review-panel.show{display:block;}
+.review-title{font-size:0.72em;letter-spacing:0.15em;color:#888;text-transform:uppercase;font-weight:600;margin-bottom:8px;}
+.review-word{font-size:1.4em;font-weight:700;margin-bottom:6px;}
+.review-word.was-correct{color:#2a7a2a;}
+.review-word.was-wrong{color:#c44;}
+.review-your-answer{font-size:0.85em;color:#999;margin-bottom:4px;}
+.review-your-answer span{text-decoration:line-through;color:#b5b0a8;}
+.review-def{font-size:0.88em;color:#666;line-height:1.5;font-style:italic;}
+.review-cn{font-size:0.82em;color:#888;line-height:1.5;margin-top:4px;font-style:normal;}
+.review-lesson{font-size:0.7em;color:#aaa;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;}
+.review-close{margin-top:12px;}
+
+#auto-next-hint{font-size:0.75em;color:#aaa;margin-top:8px;letter-spacing:0.08em;}
+
+#start-screen .description{color:#666;line-height:1.9;font-size:0.92em;margin:20px 0;}
+#start-screen ul{list-style:none;text-align:left;max-width:400px;margin:0 auto 28px;color:#666;font-size:0.88em;}
+#start-screen ul li{padding:5px 0;}
+#start-screen ul li::before{content:"> ";color:#1a1a1a;}
+
+.stat-row{display:flex;justify-content:center;gap:60px;margin:28px 0;}
+.stat-item{text-align:center;}
+.stat-number{font-size:3.2em;font-weight:700;color:#1a1a1a;}
+.stat-label{color:#888;font-size:0.72em;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;}
+.result-item{display:flex;align-items:baseline;padding:10px 0;border-bottom:1px solid #d0ccc5;gap:10px;}
+.result-icon{font-weight:700;flex-shrink:0;width:18px;text-align:center;font-size:0.9em;}
+.result-icon.ok{color:#2a7a2a;}
+.result-icon.fail{color:#c44;}
+.result-word{font-weight:700;color:#1a1a1a;letter-spacing:0.04em;}
+.result-word.strike{color:#b5b0a8;text-decoration:line-through;font-weight:400;}
+.result-word.fix{color:#2a7a2a;}
+.result-sep{color:#999;font-size:0.85em;}
+.result-lesson{color:#b5b0a8;font-size:0.72em;flex-shrink:0;letter-spacing:0.08em;text-transform:uppercase;}
+.result-def{color:#888;font-size:0.82em;line-height:1.5;padding-bottom:8px;}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+<div class="container">
+
+  <div id="start-screen">
+    <h1>BIOSPELL</h1>
+    <p class="subtitle">BIOLOGY VOCABULARY CHALLENGE</p>
+    <div class="description">
+      Read the definition. Spell the word.<br>
+      根据英文定义，拼写对应的生物专业术语。
+    </div>
+    <ul>
+      <li>10 WORDS PER ROUND</li>
+      <li>ALL VOCABULARY COVERED</li>
+      <li>REVIEW WRONG WORDS</li>
+      <li>REPLAY ANYTIME</li>
+    </ul>
+    <button class="btn" onclick="startGame()">START</button>
+  </div>
+
+  <div id="game-screen" class="hidden">
+    <h1>BIOSPELL</h1>
+    <p class="subtitle">BIOLOGY VOCABULARY CHALLENGE</p>
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="score-board">
+      <span id="current-num">1</span> / 10 &middot; CORRECT <b id="current-score">0</b>
+    </div>
+
+    <div class="review-panel" id="review-panel">
+      <div class="review-title" id="review-label">REVIEW</div>
+      <div class="review-lesson" id="review-lesson"></div>
+      <div class="review-word" id="review-word"></div>
+      <div class="review-your-answer" id="review-your-answer"></div>
+      <div class="review-def" id="review-def"></div>
+      <div class="review-cn" id="review-cn"></div>
+      <button class="btn btn-outline review-close" onclick="closeReview()">BACK</button>
+      <button class="translate-btn" style="margin-top:8px;" onclick="toggleReviewCn()" id="review-cn-btn">中文</button>
+    </div>
+
+    <div class="word-card" id="word-card">
+      <div id="card-question">
+        <div class="lesson-tag" id="lesson-tag">LESSON 1</div>
+        <div class="letter-hint" id="letter-hint"></div>
+        <div class="definition" id="definition"></div>
+        <button class="translate-btn" id="translate-btn" onclick="toggleCn()">中文</button>
+        <div class="cn-def" id="cn-def"></div>
+      </div>
+      <div class="result-overlay" id="card-result">
+        <div id="result-verdict" class="result-verdict"></div>
+        <div id="result-word-big" class="result-word-big"></div>
+        <div id="result-your-answer"></div>
+        <div id="result-correct-answer" class="result-correct-answer"></div>
+        <div id="result-def" class="result-def"></div>
+        <div id="result-cn" class="result-cn"></div>
+      </div>
+    </div>
+
+    <div class="input-area" id="input-area">
+      <input type="text" id="answer-input" placeholder="type your answer..." autocomplete="off" autocapitalize="off" spellcheck="false" oninput="updateLetterHintFromInput()">
+      <button class="btn" id="submit-btn" onclick="checkAnswer()">GO</button>
+    </div>
+
+    <div id="next-area" style="margin-top:8px;">
+      <button class="btn" id="next-btn" onclick="nextWord()" style="display:none;">NEXT &rarr;</button>
+      <div id="auto-next-hint" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="result-screen" class="hidden">
+    <h1>BIOSPELL</h1>
+    <p class="subtitle">ROUND COMPLETE</p>
+    <div class="stat-row">
+      <div class="stat-item">
+        <div class="stat-number" id="result-correct">0</div>
+        <div class="stat-label">CORRECT</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="result-wrong">0</div>
+        <div class="stat-label">WRONG</div>
+      </div>
+    </div>
+    <div id="result-details" style="text-align:left;max-width:560px;margin:0 auto;"></div>
+    <div style="margin-top:28px;">
+      <button class="btn" onclick="startGame()" id="play-again-btn">NEXT ROUND</button>
+      <br><br>
+      <button class="btn btn-outline" onclick="startWrongReview()" id="review-wrong-btn" style="display:none;">REVIEW WRONG WORDS</button>
+      <button class="btn btn-outline" onclick="resetAll()">RESET ALL</button>
+    </div>
+  </div>
+
+</div>
+<script>
+var allWords = [
+  {word:"actin",lesson:"LESSON 1",definition:"A globular protein that polymerizes to form microfilaments; involved in cell motility and muscle contraction.",cn:"一种球状蛋白，聚合形成微丝；参与细胞运动和肌肉收缩。"},
+  {word:"basal body",lesson:"LESSON 1",definition:"A structure at the base of a cilium or flagellum that organizes the microtubule assembly; derived from a centriole.",cn:"纤毛或鞭毛基部的结构，组织微管组装；由中心粒衍生而来。"},
+  {word:"centriole",lesson:"LESSON 1",definition:"A cylindrical organelle composed of microtubule triplets; involved in forming the mitotic spindle and basal bodies.",cn:"由微管三联体组成的圆柱形细胞器；参与形成纺锤体和基体。"},
+  {word:"chemotaxis",lesson:"LESSON 1",definition:"The movement of a cell or organism toward or away from a chemical stimulus.",cn:"细胞或生物体向或远离化学刺激的运动。"},
+  {word:"chloroplast",lesson:"LESSON 1",definition:"An organelle found in plant cells that carries out photosynthesis, containing chlorophyll and thylakoid membranes.",cn:"植物细胞中执行光合作用的细胞器，含有叶绿素和类囊体膜。"},
+  {word:"chromosome",lesson:"LESSON 1",definition:"A threadlike structure of DNA and proteins that carries genetic information in the nucleus.",cn:"由DNA和蛋白质组成的线状结构，在细胞核中携带遗传信息。"},
+  {word:"cilia",lesson:"LESSON 1",definition:"Short, hairlike projections from the cell surface, composed of microtubules, used for locomotion or moving fluid over the cell.",cn:"细胞表面短小的毛发状突起，由微管组成，用于运动或在细胞表面移动液体。"},
+  {word:"cytoplasm",lesson:"LESSON 1",definition:"The region of a cell between the nucleus and the plasma membrane, containing organelles and cytosol.",cn:"细胞核与质膜之间的区域，含有细胞器和细胞质基质。"},
+  {word:"cytoskeleton",lesson:"LESSON 1",definition:"A network of protein filaments (microfilaments, microtubules, and intermediate filaments) that gives the cell shape and support.",cn:"由蛋白丝（微丝、微管和中间丝）组成的网络，赋予细胞形态和支撑。"},
+  {word:"dynein",lesson:"LESSON 1",definition:"A motor protein that moves along microtubules, powering the movement of cilia and flagella.",cn:"一种沿微管运动的动力蛋白，驱动纤毛和鞭毛的运动。"},
+  {word:"endoplasmic reticulum",lesson:"LESSON 1",definition:"A network of membranous tubules in the cytoplasm; involved in protein synthesis (rough) and lipid metabolism (smooth).",cn:"细胞质中的膜管状网络；参与蛋白质合成（粗面）和脂质代谢（滑面）。"},
+  {word:"flagella",lesson:"LESSON 1",definition:"Long, whip-like appendages composed of microtubules that propel cells through their environment.",cn:"由微管组成的细长鞭状附属物，推动细胞在环境中运动。"},
+  {word:"Golgi complex",lesson:"LESSON 1",definition:"An organelle composed of stacked membranous sacs that modifies, sorts, and packages proteins for secretion or delivery.",cn:"由堆叠的膜囊组成的细胞器，修饰、分选和包装蛋白质以供分泌或递送。"},
+  {word:"lysosome",lesson:"LESSON 1",definition:"A membrane-enclosed organelle containing digestive enzymes that break down cellular waste and foreign material.",cn:"含有消化酶的膜包细胞器，分解细胞废物和外来物质。"},
+  {word:"microfilament",lesson:"LESSON 1",definition:"A thin filament of actin protein that forms part of the cytoskeleton, involved in cell movement and shape.",cn:"由肌动蛋白组成的细丝，构成细胞骨架的一部分，参与细胞运动和形态维持。"},
+  {word:"microtubule",lesson:"LESSON 1",definition:"A hollow tube of tubulin protein that is part of the cytoskeleton, involved in cell division and intracellular transport.",cn:"由微管蛋白组成的中空管状结构，是细胞骨架的一部分，参与细胞分裂和胞内运输。"},
+  {word:"mitochondrion",lesson:"LESSON 1",definition:"An organelle that carries out cellular respiration, producing ATP from the energy of organic molecules.",cn:"执行细胞呼吸的细胞器，从有机分子的能量中产生ATP。"},
+  {word:"myosin",lesson:"LESSON 1",definition:"A motor protein that interacts with actin filaments to cause muscle contraction and cell movement.",cn:"与肌动蛋白丝相互作用引起肌肉收缩和细胞运动的动力蛋白。"},
+  {word:"nuclear envelope",lesson:"LESSON 1",definition:"A double membrane surrounding the nucleus, continuous with the endoplasmic reticulum, with pores for molecular transport.",cn:"包围细胞核的双层膜，与内质网相连，具有分子运输的核孔。"},
+  {word:"nucleoid",lesson:"LESSON 1",definition:"A region in a prokaryotic cell where the circular DNA molecule is located, not enclosed by a membrane.",cn:"原核细胞中环状DNA分子所在的区域，不被膜包围。"},
+  {word:"nucleoli",lesson:"LESSON 1",definition:"Structures within the nucleus where ribosomal RNA is synthesized and ribosome subunits are assembled.",cn:"细胞核内的结构，合成核糖体RNA并组装核糖体亚基。"},
+  {word:"nucleus",lesson:"LESSON 1",definition:"A membrane-enclosed organelle that contains the cell's genetic material (chromosomes) and controls cellular activities.",cn:"被膜包围的细胞器，含有细胞的遗传物质（染色体）并控制细胞活动。"},
+  {word:"phagocytosis",lesson:"LESSON 1",definition:"The process by which a cell engulfs large particles or whole cells by forming a vesicle around them.",cn:"细胞通过形成囊泡吞入大颗粒或整个细胞的过程。"},
+  {word:"pinocytosis",lesson:"LESSON 1",definition:"The uptake of extracellular fluid and dissolved solutes by the cell through small vesicles; also called 'cell drinking'.",cn:"细胞通过小囊泡摄取细胞外液体和溶解溶质的过程；又称\"细胞饮\"。"},
+  {word:"plastid",lesson:"LESSON 1",definition:"A group of plant organelles including chloroplasts that are involved in synthesis and storage of food or pigments.",cn:"一类植物细胞器，包括叶绿体，参与食物或色素的合成与储存。"},
+  {word:"polysome",lesson:"LESSON 1",definition:"A cluster of ribosomes translating the same mRNA molecule simultaneously.",cn:"同时翻译同一mRNA分子的核糖体簇。"},
+  {word:"ribosome",lesson:"LESSON 1",definition:"A cellular structure composed of rRNA and proteins that is the site of protein synthesis in the cell.",cn:"由rRNA和蛋白质组成的细胞结构，是细胞中蛋白质合成的场所。"},
+  {word:"stroma",lesson:"LESSON 1",definition:"The fluid-filled interior space of the chloroplast surrounding the thylakoids, where the Calvin cycle takes place.",cn:"叶绿体中围绕类囊体的充满液体的内部空间，卡尔文循环发生的场所。"},
+  {word:"tubulin",lesson:"LESSON 1",definition:"A globular protein that polymerizes to form microtubules; exists as alpha and beta subunits.",cn:"一种球状蛋白，聚合形成微管；以α和β亚基形式存在。"},
+  {word:"vacuole",lesson:"LESSON 1",definition:"A membrane-enclosed compartment in a cell that stores water, ions, nutrients, and waste products.",cn:"细胞中由膜包围的区室，储存水、离子、营养物质和废物。"},
+  {word:"absorption spectrum",lesson:"LESSON 2",definition:"A graph showing the wavelengths of light absorbed by a pigment, plotted against the intensity of absorption.",cn:"显示色素所吸收光波长的图，以吸收强度为纵坐标绘制的图。"},
+  {word:"Calvin-Benson cycle",lesson:"LESSON 2",definition:"The series of enzymatic reactions in the chloroplast stroma that fixes carbon dioxide and produces sugars using ATP and NADPH.",cn:"叶绿体基质中的一系列酶促反应，利用ATP和NADPH固定二氧化碳并产生糖类。"},
+  {word:"carotenoid",lesson:"LESSON 2",definition:"An accessory photosynthetic pigment that is yellow, orange, or red; absorbs light in the blue-green region.",cn:"一种辅助光合色素，呈黄色、橙色或红色；吸收蓝绿区域的光。"},
+  {word:"chlorophyll",lesson:"LESSON 2",definition:"The green photosynthetic pigment in plants and algae that absorbs light energy to drive photosynthesis.",cn:"植物和藻类中的绿色光合色素，吸收光能驱动光合作用。"},
+  {word:"cyclic photophosphorylation",lesson:"LESSON 2",definition:"A pathway in photosynthesis where excited electrons from Photosystem I return to the same photosystem, producing ATP but no NADPH.",cn:"光合作用中光系统I的激发电子返回同一光系统的途径，产生ATP但不产生NADPH。"},
+  {word:"light-dependent reactions",lesson:"LESSON 2",definition:"The first stage of photosynthesis occurring in the thylakoid membranes, where light energy is converted to ATP and NADPH, and oxygen is released.",cn:"光合作用第一阶段，发生在类囊体膜上，光能转化为ATP和NADPH，并释放氧气。"},
+  {word:"light-independent reactions",lesson:"LESSON 2",definition:"The second stage of photosynthesis (Calvin cycle) occurring in the stroma, where CO2 is fixed and sugars are synthesized without direct light input.",cn:"光合作用第二阶段（卡尔文循环），发生在基质中，CO2被固定并合成糖类，不需要直接光照。"},
+  {word:"photon",lesson:"LESSON 2",definition:"A discrete packet of light energy; the basic unit of electromagnetic radiation.",cn:"光的离散能量包；电磁辐射的基本单位。"},
+  {word:"photophosphorylation",lesson:"LESSON 2",definition:"The synthesis of ATP using the energy of light-driven electron flow in the thylakoid membranes during photosynthesis.",cn:"光合作用中利用类囊体膜上光驱动电子流合成ATP的过程。"},
+  {word:"photorespiration",lesson:"LESSON 2",definition:"A process in which Rubisco reacts with oxygen instead of CO2, wasting energy and reducing photosynthetic efficiency.",cn:"Rubisco与氧气而非CO2反应的过程，浪费能量并降低光合效率。"},
+  {word:"photosynthesis",lesson:"LESSON 2",definition:"The process by which plants, algae, and some bacteria convert light energy, CO2, and water into glucose and oxygen.",cn:"植物、藻类和某些细菌将光能、CO2和水转化为葡萄糖和氧气的过程。"},
+  {word:"photosystem",lesson:"LESSON 2",definition:"A light-harvesting complex in the thylakoid membrane consisting of pigment molecules and a reaction center that absorbs light energy.",cn:"类囊体膜中的光捕获复合体，由色素分子和吸收光能的反应中心组成。"},
+  {word:"ribulose biphosphate",lesson:"LESSON 2",definition:"A five-carbon sugar that combines with CO2 in the Calvin cycle, catalyzed by Rubisco.",cn:"一种五碳糖，在卡尔文循环中与CO2结合，由Rubisco催化。"},
+  {word:"thylakoid",lesson:"LESSON 2",definition:"A flattened membranous sac inside the chloroplast where the light-dependent reactions of photosynthesis occur.",cn:"叶绿体内的扁平膜囊，光合作用光反应发生的场所。"},
+  {word:"anaphase",lesson:"LESSON 3",definition:"The stage of mitosis or meiosis in which the chromosomes move to opposite poles of the cell.",cn:"有丝分裂或减数分裂中染色体移向细胞两极的阶段。"},
+  {word:"cell plate",lesson:"LESSON 3",definition:"A structure that forms in the middle of a dividing plant cell, developing into the new cell wall between daughter cells.",cn:"在分裂的植物细胞中间形成的结构，发育为子细胞之间的新细胞壁。"},
+  {word:"centromere",lesson:"LESSON 3",definition:"The constricted region of a chromosome where sister chromatids are joined and spindle fibers attach during cell division.",cn:"染色体的缢缩区域，姐妹染色单体在此连接，纺锤丝在细胞分裂时附着于此。"},
+  {word:"chalice",lesson:"LESSON 3",definition:"A structure associated with chromosome arrangement; a chalice-shaped form sometimes used to describe the metaphase plate alignment.",cn:"与染色体排列相关的结构；有时用于描述赤道板排列的高脚杯形。"},
+  {word:"chromatid",lesson:"LESSON 3",definition:"One of the two identical copies of a replicated chromosome, joined at the centromere to its sister.",cn:"复制染色体的两个相同拷贝之一，在着丝粒处与姐妹染色单体相连。"},
+  {word:"chromatin",lesson:"LESSON 3",definition:"The complex of DNA and histone proteins that makes up chromosomes in the nucleus during interphase.",cn:"由DNA和组蛋白组成的复合体，构成间期细胞核中的染色体。"},
+  {word:"cytokinesis",lesson:"LESSON 3",definition:"The process of cytoplasmic division that follows mitosis or meiosis, producing two daughter cells.",cn:"有丝分裂或减数分裂后细胞质分裂的过程，产生两个子细胞。"},
+  {word:"diploid",lesson:"LESSON 3",definition:"Having two complete sets of chromosomes, one from each parent (2n).",cn:"具有两套完整的染色体，分别来自父方和母方（2n）。"},
+  {word:"haploid",lesson:"LESSON 3",definition:"Having only one set of chromosomes, as in gametes (n).",cn:"只有一套染色体，如配子中的（n）。"},
+  {word:"histone",lesson:"LESSON 3",definition:"A small basic protein around which DNA wraps to form nucleosomes, organizing chromatin structure.",cn:"一种小分子碱性蛋白，DNA围绕其缠绕形成核小体，组织染色质结构。"},
+  {word:"homologous pair",lesson:"LESSON 3",definition:"A pair of chromosomes of the same size, shape, and gene content, one inherited from each parent.",cn:"一对大小、形态和基因内容相同的染色体，分别来自父方和母方。"},
+  {word:"interphase",lesson:"LESSON 3",definition:"The stage of the cell cycle between divisions, consisting of G1, S, and G2 phases, during which the cell grows and replicates its DNA.",cn:"细胞周期中分裂间的阶段，包括G1、S和G2期，细胞生长并复制DNA。"},
+  {word:"karyotype",lesson:"LESSON 3",definition:"A visual arrangement of all the chromosomes of an organism, organized by size and banding pattern.",cn:"将生物体所有染色体按大小和带型排列的可视图。"},
+  {word:"meiosis",lesson:"LESSON 3",definition:"A type of cell division that produces four haploid gametes from one diploid cell, involving two successive divisions.",cn:"一种细胞分裂方式，从一个二倍体细胞产生四个单倍体配子，涉及两次连续分裂。"},
+  {word:"metaphase",lesson:"LESSON 3",definition:"The stage of mitosis or meiosis in which chromosomes are aligned at the metaphase plate.",cn:"有丝分裂或减数分裂中染色体排列在赤道板的阶段。"},
+  {word:"metaphase plate",lesson:"LESSON 3",definition:"An imaginary plane perpendicular to the spindle fibers, where chromosomes align during metaphase.",cn:"垂直于纺锤丝的假想平面，中期时染色体在此排列。"},
+  {word:"mitosis",lesson:"LESSON 3",definition:"The process of nuclear division in which replicated chromosomes are separated into two daughter nuclei, producing genetically identical cells.",cn:"核分裂过程，复制的染色体被分离到两个子核中，产生遗传上相同的细胞。"},
+  {word:"nucleosome",lesson:"LESSON 3",definition:"The basic unit of chromatin structure, consisting of a segment of DNA wrapped around a core of eight histone proteins.",cn:"染色质结构的基本单位，由一段DNA围绕八个组蛋白核心缠绕而成。"},
+  {word:"prophase",lesson:"LESSON 3",definition:"The first stage of mitosis or meiosis in which chromatin condenses into visible chromosomes and the spindle begins to form.",cn:"有丝分裂或减数分裂的第一阶段，染色质凝缩为可见染色体，纺锤体开始形成。"},
+  {word:"spindle",lesson:"LESSON 3",definition:"A structure composed of microtubules that moves chromosomes during mitosis and meiosis.",cn:"由微管组成的结构，在有丝分裂和减数分裂中移动染色体。"},
+  {word:"telophase",lesson:"LESSON 3",definition:"The final stage of mitosis or meiosis in which chromosomes arrive at opposite poles and nuclear envelopes reform.",cn:"有丝分裂或减数分裂的最后阶段，染色体到达两极，核膜重新形成。"},
+  {word:"allele",lesson:"LESSON 4",definition:"An alternative form of a gene that arises by mutation and is found at the same locus on homologous chromosomes.",cn:"基因的替代形式，由突变产生，位于同源染色体的相同基因座上。"},
+  {word:"dihybrid cross",lesson:"LESSON 4",definition:"A genetic cross between individuals differing in two traits, following the inheritance of two gene pairs simultaneously.",cn:"两个性状不同的个体之间的遗传杂交，同时追踪两对基因的遗传。"},
+  {word:"dominant",lesson:"LESSON 4",definition:"An allele that is expressed in the phenotype even when only one copy is present in the genotype.",cn:"在基因型中只要存在一个拷贝就能在表型中表达的等位基因。"},
+  {word:"gene",lesson:"LESSON 4",definition:"A heritable unit of genetic information, a segment of DNA that codes for a specific product (protein or RNA).",cn:"遗传信息的可遗传单位，编码特定产物（蛋白质或RNA）的DNA片段。"},
+  {word:"genotype",lesson:"LESSON 4",definition:"The genetic makeup of an organism, representing the combination of alleles present at one or more gene loci.",cn:"生物体的遗传组成，表示一个或多个基因座上等位基因的组合。"},
+  {word:"germ plasm theory",lesson:"LESSON 4",definition:"The theory that the reproductive cells (germ plasm) carry hereditary information that is passed from generation to generation, separate from somatic cells.",cn:"生殖细胞（种质）携带遗传信息代代相传、与体细胞分离的理论。"},
+  {word:"heterozygous",lesson:"LESSON 4",definition:"Having two different alleles for a particular gene (e.g., Aa).",cn:"某一特定基因具有两个不同等位基因（如Aa）。"},
+  {word:"homozygous",lesson:"LESSON 4",definition:"Having two identical alleles for a particular gene (e.g., AA or aa).",cn:"某一特定基因具有两个相同等位基因（如AA或aa）。"},
+  {word:"incomplete dominance",lesson:"LESSON 4",definition:"A pattern of inheritance in which the heterozygote phenotype is intermediate between the two homozygous phenotypes.",cn:"一种遗传模式，杂合子表型介于两个纯合子表型之间。"},
+  {word:"law of independent assortment",lesson:"LESSON 4",definition:"Mendel's second law stating that alleles of different genes assort independently of each other during gamete formation.",cn:"孟德尔第二定律，指出不同基因的等位基因在配子形成时独立分配。"},
+  {word:"law of segregation",lesson:"LESSON 4",definition:"Mendel's first law stating that paired alleles separate during gamete formation so that each gamete carries only one allele.",cn:"孟德尔第一定律，成对等位基因在配子形成时分离，每个配子只携带一个等位基因。"},
+  {word:"nondisjunction",lesson:"LESSON 4",definition:"The failure of homologous chromosomes or sister chromatids to separate properly during meiosis, resulting in an abnormal number of chromosomes.",cn:"减数分裂中同源染色体或姐妹染色单体未能正常分离，导致染色体数目异常。"},
+  {word:"pangenesis",lesson:"LESSON 4",definition:"An early (incorrect) theory proposing that each body part produces gemmules that collect in the reproductive organs to form gametes.",cn:"一种早期（错误的）理论，提出身体各部分产生泛子，聚集在生殖器官中形成配子。"},
+  {word:"phenotype",lesson:"LESSON 4",definition:"The observable physical and biochemical characteristics of an organism, determined by the interaction of genotype and environment.",cn:"生物体可观察的物理和生化特征，由基因型和环境的相互作用决定。"},
+  {word:"Punnett square",lesson:"LESSON 4",definition:"A diagram used to predict the genotypes and phenotypes of offspring from a genetic cross.",cn:"用于预测遗传杂交后代基因型和表型的方格图。"},
+  {word:"recessive",lesson:"LESSON 4",definition:"An allele that is only expressed in the phenotype when two copies are present in the genotype (homozygous).",cn:"只有在基因型中存在两个拷贝（纯合）时才在表型中表达的等位基因。"},
+  {word:"test cross",lesson:"LESSON 4",definition:"A genetic cross between an individual of unknown genotype and a homozygous recessive individual to determine the unknown genotype.",cn:"未知基因型个体与纯合隐性个体之间的遗传杂交，以确定未知基因型。"},
+  {word:"adenine",lesson:"LESSON 5",definition:"A purine nitrogenous base found in DNA and RNA that pairs with thymine in DNA and uracil in RNA.",cn:"一种嘌呤含氮碱基，存在于DNA和RNA中，在DNA中与胸腺嘧啶配对，在RNA中与尿嘧啶配对。"},
+  {word:"cytosine",lesson:"LESSON 5",definition:"A pyrimidine nitrogenous base found in DNA and RNA that pairs with guanine.",cn:"一种嘧啶含氮碱基，存在于DNA和RNA中，与鸟嘌呤配对。"},
+  {word:"DNA polymerase",lesson:"LESSON 5",definition:"An enzyme that catalyzes the synthesis of a new DNA strand by adding nucleotides complementary to the template strand during DNA replication.",cn:"一种酶，在DNA复制过程中通过添加与模板链互补的核苷酸来催化新DNA链的合成。"},
+  {word:"double helix",lesson:"LESSON 5",definition:"The three-dimensional structure of DNA, consisting of two antiparallel strands twisted around each other, held together by hydrogen bonds between complementary bases.",cn:"DNA的三维结构，由两条反向平行的链相互缠绕而成，通过互补碱基间的氢键连接。"},
+  {word:"guanine",lesson:"LESSON 5",definition:"A purine nitrogenous base found in DNA and RNA that pairs with cytosine.",cn:"一种嘌呤含氮碱基，存在于DNA和RNA中，与胞嘧啶配对。"},
+  {word:"nucleoside",lesson:"LESSON 5",definition:"A molecule consisting of a nitrogenous base (purine or pyrimidine) covalently bonded to a sugar (ribose or deoxyribose), but without a phosphate group.",cn:"由含氮碱基（嘌呤或嘧啶）与糖（核糖或脱氧核糖）共价结合的分子，但不含磷酸基团。"},
+  {word:"Okazaki fragment",lesson:"LESSON 5",definition:"A short segment of DNA synthesized on the lagging strand during replication, later joined by DNA ligase.",cn:"DNA复制中在滞后链上合成的短片段，随后由DNA连接酶连接。"},
+  {word:"one-gene-one-enzyme hypothesis",lesson:"LESSON 5",definition:"The hypothesis proposed by Beadle and Tatum that each gene specifies the production of a single enzyme.",cn:"Beadle和Tatum提出的假说，认为每个基因指定一种酶的产生。"},
+  {word:"one-gene-one-polypeptide hypothesis",lesson:"LESSON 5",definition:"A refinement of the one-gene-one-enzyme hypothesis, stating that each gene encodes a single polypeptide chain.",cn:"一基因一酶假说的修正，指出每个基因编码一条多肽链。"},
+  {word:"purine",lesson:"LESSON 5",definition:"A type of nitrogenous base with a double-ring structure, including adenine and guanine.",cn:"具有双环结构的含氮碱基类型，包括腺嘌呤和鸟嘌呤。"},
+  {word:"pyrimidine",lesson:"LESSON 5",definition:"A type of nitrogenous base with a single-ring structure, including cytosine, thymine, and uracil.",cn:"具有单环结构的含氮碱基类型，包括胞嘧啶、胸腺嘧啶和尿嘧啶。"},
+  {word:"replication fork",lesson:"LESSON 5",definition:"The Y-shaped region where the parental DNA double helix is unwound and replicated during DNA replication.",cn:"DNA复制中亲代双链DNA被解开并复制的Y形区域。"},
+  {word:"semiconservative replication",lesson:"LESSON 5",definition:"The model of DNA replication in which each new double helix contains one original strand and one newly synthesized strand.",cn:"DNA复制模型，每个新的双螺旋含一条原始链和一条新合成的链。"},
+  {word:"thymine",lesson:"LESSON 5",definition:"A pyrimidine nitrogenous base found only in DNA that pairs with adenine.",cn:"一种嘧啶含氮碱基，仅存在于DNA中，与腺嘌呤配对。"},
+  {word:"X-ray diffraction",lesson:"LESSON 5",definition:"A technique used to determine molecular structure by analyzing the pattern of X-rays scattered by a crystalline sample; key to discovering the DNA double helix.",cn:"通过分析晶体样品散射的X射线图案来确定分子结构的技术；发现DNA双螺旋的关键。"}
+];
+
+var wordPool = [];
+var currentRound = [];
+var currentIndex = 0;
+var score = 0;
+var roundResults = [];
+var userAnswers = [];
+var isShowingResult = false;
+var autoNextTimer = null;
+var canAdvanceTime = 0;
+var wrongWordMap = {};
+
+// ===== CONFETTI =====
+var confettiCanvas = document.getElementById("confetti-canvas");
+var confettiCtx = confettiCanvas.getContext("2d");
+var confettiPieces = [];
+var confettiAnimating = false;
+
+function resizeCanvas() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+function launchConfetti() {
+  confettiPieces = [];
+  var colors = ["#1a1a1a","#2a7a2a","#444","#888","#b5b0a8","#e8e4dd"];
+  for (var i = 0; i < 60; i++) {
+    confettiPieces.push({
+      x: Math.random() * confettiCanvas.width,
+      y: -20 - Math.random() * 100,
+      w: 4 + Math.random() * 6,
+      h: 4 + Math.random() * 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vy: 2 + Math.random() * 4,
+      vx: (Math.random() - 0.5) * 3,
+      rot: Math.random() * 360,
+      rotV: (Math.random() - 0.5) * 10,
+      opacity: 1
+    });
+  }
+  if (!confettiAnimating) {
+    confettiAnimating = true;
+    animateConfetti();
+  }
+}
+
+function animateConfetti() {
+  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  var alive = 0;
+  for (var i = 0; i < confettiPieces.length; i++) {
+    var p = confettiPieces[i];
+    if (p.opacity <= 0) continue;
+    alive++;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.rotV;
+    if (p.y > confettiCanvas.height - 50) {
+      p.opacity -= 0.03;
+    }
+    confettiCtx.save();
+    confettiCtx.translate(p.x, p.y);
+    confettiCtx.rotate(p.rot * Math.PI / 180);
+    confettiCtx.globalAlpha = Math.max(0, p.opacity);
+    confettiCtx.fillStyle = p.color;
+    confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    confettiCtx.restore();
+  }
+  if (alive > 0) {
+    requestAnimationFrame(animateConfetti);
+  } else {
+    confettiAnimating = false;
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  }
+}
+
+// ===== GAME LOGIC =====
+function shuffleArray(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function startGame() {
+  if (wordPool.length === 0) {
+    wordPool = shuffleArray(allWords);
+  }
+  currentRound = wordPool.splice(0, 10);
+  if (currentRound.length === 0) {
+    alert("All words completed! Click RESET ALL to start over.");
+    return;
+  }
+  currentIndex = 0;
+  score = 0;
+  roundResults = [];
+  userAnswers = [];
+  isShowingResult = false;
+  if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  document.getElementById("start-screen").classList.add("hidden");
+  document.getElementById("result-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+  showWord();
+}
+
+function buildDots() {
+  var bar = document.getElementById("progress-bar");
+  bar.innerHTML = "";
+  for (var i = 0; i < currentRound.length; i++) {
+    var dot = document.createElement("div");
+    if (i < roundResults.length) {
+      if (roundResults[i]) {
+        dot.className = "dot correct-dot";
+        dot.textContent = "\u2713";
+      } else {
+        dot.className = "dot wrong-dot";
+        dot.textContent = "\u2717";
+      }
+      dot.setAttribute("data-index", i);
+      dot.onclick = function() { showReview(parseInt(this.getAttribute("data-index"))); };
+    } else if (i === currentIndex && !isShowingResult) {
+      dot.className = "dot current";
+      dot.textContent = (i + 1);
+    } else {
+      dot.className = "dot pending";
+      dot.textContent = (i + 1);
+    }
+    bar.appendChild(dot);
+  }
+}
+
+var reviewActive = false;
+
+function showReview(idx) {
+  if (idx >= roundResults.length) return;
+  reviewActive = true;
+  reviewCnVisible = false;
+  var w = currentRound[idx];
+  var ok = roundResults[idx];
+  document.getElementById("word-card").style.display = "none";
+  document.getElementById("input-area").style.display = "none";
+  document.getElementById("next-area").style.display = "none";
+  if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  document.getElementById("auto-next-hint").style.display = "none";
+  var rp = document.getElementById("review-panel");
+  rp.classList.add("show");
+  document.getElementById("review-cn-btn").textContent = "中文";
+  document.getElementById("review-cn").style.display = "none";
+  document.getElementById("review-lesson").textContent = w.lesson;
+  if (ok) {
+    document.getElementById("review-label").textContent = "CORRECT";
+    document.getElementById("review-label").style.color = "#2a7a2a";
+    document.getElementById("review-word").textContent = w.word;
+    document.getElementById("review-word").className = "review-word was-correct";
+    document.getElementById("review-your-answer").innerHTML = "";
+    document.getElementById("review-def").textContent = w.definition;
+    if (w.cn) {
+      document.getElementById("review-cn").textContent = w.cn;
+      document.getElementById("review-cn").style.display = "";
+    } else {
+      document.getElementById("review-cn").textContent = "";
+      document.getElementById("review-cn").style.display = "none";
+    }
+  } else {
+    document.getElementById("review-label").textContent = "INCORRECT";
+    document.getElementById("review-label").style.color = "#c44";
+    document.getElementById("review-word").innerHTML = "";
+    document.getElementById("review-your-answer").innerHTML = 'Your answer: <span>' + userAnswers[idx] + '</span>';
+    document.getElementById("review-def").innerHTML = '<b style="color:#2a7a2a;">' + w.word + '</b> &mdash; ' + w.definition;
+    if (w.cn) {
+      document.getElementById("review-cn").textContent = w.cn;
+      document.getElementById("review-cn").style.display = "";
+    } else {
+      document.getElementById("review-cn").textContent = "";
+      document.getElementById("review-cn").style.display = "none";
+    }
+    document.getElementById("review-word").className = "review-word was-correct";
+  }
+}
+
+function closeReview() {
+  reviewActive = false;
+  document.getElementById("review-panel").classList.remove("show");
+  document.getElementById("word-card").style.display = "";
+  document.getElementById("input-area").style.display = "";
+  document.getElementById("next-area").style.display = "";
+}
+
+function buildLetterHint(wordStr) {
+  var hint = document.getElementById("letter-hint");
+  hint.innerHTML = "";
+  for (var i = 0; i < wordStr.length; i++) {
+    var box = document.createElement("div");
+    box.className = "letter-box";
+    if (wordStr.charAt(i) === " ") {
+      box.className = "letter-box space";
+      box.innerHTML = "&nbsp;";
+    } else {
+      box.textContent = "_";
+    }
+    hint.appendChild(box);
+  }
+}
+
+function updateLetterHintFromInput() {
+  if (isShowingResult) return;
+  var input = document.getElementById("answer-input");
+  var val = input.value.replace(/ /g, '');
+  var hint = document.getElementById("letter-hint");
+  var boxes = hint.querySelectorAll(".letter-box:not(.space)");
+  for (var i = 0; i < boxes.length; i++) {
+    if (i < val.length) {
+      boxes[i].textContent = val.charAt(i);
+      boxes[i].classList.add("typed");
+      boxes[i].classList.remove("revealed");
+    } else {
+      boxes[i].textContent = "_";
+      boxes[i].className = "letter-box";
+    }
+  }
+}
+
+function revealLettersSilent(wordStr) {
+  var hint = document.getElementById("letter-hint");
+  var boxes = hint.querySelectorAll(".letter-box");
+  var li = 0;
+  for (var i = 0; i < wordStr.length; i++) {
+    if (wordStr.charAt(i) !== " ") {
+      boxes[li].textContent = wordStr.charAt(i);
+      boxes[li].classList.add("revealed");
+    }
+    li++;
+  }
+}
+
+function showWord() {
+  isShowingResult = false;
+  resetCn();
+  if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  var word = currentRound[currentIndex];
+  document.getElementById("review-panel").classList.remove("show");
+
+  document.getElementById("lesson-tag").textContent = word.lesson;
+  document.getElementById("definition").textContent = word.definition;
+  document.getElementById("cn-def").textContent = word.cn || "";
+  document.getElementById("cn-def").className = "cn-def";
+  document.getElementById("translate-btn").textContent = "中文";
+  document.getElementById("current-num").textContent = (currentIndex + 1);
+  document.getElementById("current-score").textContent = score;
+
+  document.getElementById("card-question").style.display = "";
+  document.getElementById("card-result").className = "result-overlay";
+  document.getElementById("word-card").className = "word-card";
+
+  var input = document.getElementById("answer-input");
+  input.value = "";
+  input.disabled = false;
+  input.style.display = "";
+  input.focus();
+  document.getElementById("submit-btn").style.display = "";
+  document.getElementById("submit-btn").disabled = false;
+  document.getElementById("translate-btn").style.display = "";
+  document.getElementById("next-btn").style.display = "none";
+  document.getElementById("auto-next-hint").style.display = "none";
+
+  buildLetterHint(word.word);
+  buildDots();
+}
+
+function checkAnswer() {
+  if (isShowingResult) return;
+  var input = document.getElementById("answer-input");
+  var userAnswer = input.value.trim();
+  if (!userAnswer) return;
+
+  var word = currentRound[currentIndex];
+  var isCorrect = userAnswer.toLowerCase() === word.word.toLowerCase();
+  roundResults.push(isCorrect);
+  userAnswers.push(userAnswer);
+  isShowingResult = true;
+  canAdvanceTime = Date.now() + 800;
+  input.disabled = true;
+  input.style.display = "none";
+  document.getElementById("submit-btn").style.display = "none";
+  document.getElementById("translate-btn").style.display = "none";
+  document.getElementById("cn-def").className = "cn-def";
+
+  if (isCorrect) { score++; }
+
+  if (!isCorrect) {
+    wrongWordMap[word.word.toLowerCase()] = word;
+  }
+
+  document.getElementById("current-score").textContent = score;
+  document.getElementById("card-question").style.display = "none";
+  var card = document.getElementById("word-card");
+  var resultEl = document.getElementById("card-result");
+  resultEl.className = "result-overlay show";
+
+  if (isCorrect) {
+    card.className = "word-card correct-flash";
+    document.getElementById("result-verdict").textContent = "CORRECT";
+    document.getElementById("result-verdict").className = "result-verdict correct-verdict";
+    document.getElementById("result-word-big").textContent = word.word;
+    document.getElementById("result-word-big").className = "result-word-big correct-green";
+    document.getElementById("result-your-answer").innerHTML = "";
+    document.getElementById("result-correct-answer").innerHTML = "";
+    document.getElementById("result-def").textContent = word.definition;
+    var cnEl = document.getElementById("result-cn");
+    if (word.cn) { cnEl.textContent = word.cn; cnEl.style.display = "block"; }
+    else { cnEl.textContent = ""; cnEl.style.display = "none"; }
+
+    launchConfetti();
+
+    buildDots();
+    var autoNextSec = 2;
+    var hint = document.getElementById("auto-next-hint");
+    hint.style.display = "";
+    hint.textContent = "Auto next in " + autoNextSec + "s...";
+    var countdown = autoNextSec;
+    var countdownInterval = setInterval(function() {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        hint.style.display = "none";
+      } else {
+        hint.textContent = "Auto next in " + countdown + "s...";
+      }
+    }, 1000);
+    autoNextTimer = setTimeout(function() {
+      autoNextTimer = null;
+      nextWord();
+    }, autoNextSec * 1000);
+
+  } else {
+    card.className = "word-card wrong-flash";
+    document.getElementById("result-verdict").textContent = "INCORRECT";
+    document.getElementById("result-verdict").className = "result-verdict wrong-verdict";
+    document.getElementById("result-word-big").innerHTML = "";
+    document.getElementById("result-your-answer").innerHTML = 'Your answer: <span>' + userAnswer + '</span>';
+    document.getElementById("result-correct-answer").textContent = word.word;
+    document.getElementById("result-def").textContent = word.definition;
+    var cnEl2 = document.getElementById("result-cn");
+    if (word.cn) { cnEl2.textContent = word.cn; cnEl2.style.display = "block"; }
+    else { cnEl2.textContent = ""; cnEl2.style.display = "none"; }
+
+    buildDots();
+    document.getElementById("next-btn").style.display = "none";
+    setTimeout(function() {
+      document.getElementById("next-btn").style.display = "";
+      document.getElementById("next-btn").focus();
+    }, 1200);
+  }
+}
+
+function nextWord() {
+  if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  document.getElementById("auto-next-hint").style.display = "none";
+  closeReview();
+  currentIndex++;
+  if (currentIndex >= currentRound.length) {
+    showResults();
+  } else {
+    showWord();
+  }
+}
+
+function showResults() {
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("result-screen").classList.remove("hidden");
+  document.getElementById("result-correct").textContent = score;
+  document.getElementById("result-wrong").textContent = currentRound.length - score;
+
+  var details = '<div style="margin-top:20px;max-height:400px;overflow-y:auto;">';
+  for (var i = 0; i < currentRound.length; i++) {
+    var w = currentRound[i];
+    var ok = roundResults[i];
+    details += '<div class="result-item">';
+    details += '<div class="result-icon ' + (ok ? 'ok' : 'fail') + '">' + (ok ? '\u2713' : '\u2717') + '</div>';
+    if (ok) {
+      details += '<div class="result-word">' + w.word + '</div>';
+    } else {
+      details += '<div class="result-word strike">' + userAnswers[i] + '</div>';
+      details += '<div class="result-sep">&rarr;</div>';
+      details += '<div class="result-word fix">' + w.word + '</div>';
+    }
+    details += '<div class="result-lesson">' + w.lesson + '</div>';
+    details += '</div>';
+    if (!ok) {
+      details += '<div class="result-def">' + w.definition + '</div>';
+      if (w.cn) {
+        details += '<div class="result-def" style="font-style:normal;color:#999;">' + w.cn + '</div>';
+      }
+    }
+  }
+  details += '</div>';
+  var remaining = wordPool.length;
+  details += '<p style="margin-top:16px;color:#999;font-size:0.82em;letter-spacing:0.08em;">' + remaining + ' WORDS REMAINING</p>';
+
+  document.getElementById("result-details").innerHTML = details;
+  if (remaining === 0 && Object.keys(wrongWordMap).length === 0) {
+    document.getElementById("play-again-btn").textContent = "ALL DONE - RESET TO REPLAY";
+  } else {
+    document.getElementById("play-again-btn").textContent = "NEXT ROUND";
+  }
+
+  var wrongCount = Object.keys(wrongWordMap).length;
+  var rwb = document.getElementById("review-wrong-btn");
+  if (wrongCount > 0) {
+    rwb.style.display = "";
+    rwb.textContent = "REVIEW WRONG WORDS (" + wrongCount + ")";
+  } else {
+    rwb.style.display = "none";
+  }
+}
+
+function resetAll() {
+  wordPool = [];
+  currentRound = [];
+  currentIndex = 0;
+  score = 0;
+  roundResults = [];
+  userAnswers = [];
+  isShowingResult = false;
+  wrongWordMap = {};
+  if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  document.getElementById("result-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("start-screen").classList.remove("hidden");
+}
+
+function startWrongReview() {
+  var words = [];
+  for (var key in wrongWordMap) {
+    words.push(wrongWordMap[key]);
+  }
+  if (words.length === 0) {
+    alert("No wrong words to review!");
+    return;
+  }
+  wrongWordMap = {};
+  wordPool = shuffleArray(words);
+  currentRound = wordPool.splice(0, Math.min(10, wordPool.length));
+  currentIndex = 0;
+  score = 0;
+  roundResults = [];
+  userAnswers = [];
+  isShowingResult = false;
+  if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  document.getElementById("result-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+  showWord();
+}
+
+var cnVisible = false;
+function toggleCn() {
+  var cnEl = document.getElementById("cn-def");
+  var btn = document.getElementById("translate-btn");
+  cnVisible = !cnVisible;
+  if (cnVisible) {
+    cnEl.className = "cn-def show";
+    btn.textContent = "EN";
+  } else {
+    cnEl.className = "cn-def";
+    btn.textContent = "中文";
+  }
+}
+
+var reviewCnVisible = false;
+function toggleReviewCn() {
+  var cnEl = document.getElementById("review-cn");
+  var btn = document.getElementById("review-cn-btn");
+  reviewCnVisible = !reviewCnVisible;
+  if (reviewCnVisible && cnEl.textContent) {
+    cnEl.style.display = "block";
+    btn.textContent = "EN";
+  } else {
+    cnEl.style.display = "none";
+    btn.textContent = "中文";
+  }
+}
+
+function resetCn() {
+  cnVisible = false;
+  var cnEl = document.getElementById("cn-def");
+  cnEl.className = "cn-def";
+  document.getElementById("translate-btn").textContent = "中文";
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    if (!document.getElementById("game-screen").classList.contains("hidden")) {
+      if (reviewActive) {
+        closeReview();
+        return;
+      }
+      if (!isShowingResult) {
+        checkAnswer();
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
