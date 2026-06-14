@@ -134,6 +134,11 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 @keyframes titleGlitch{0%{transform:translate(0);filter:hue-rotate(0deg);}10%{transform:translate(-3px,2px);filter:hue-rotate(90deg);}20%{transform:translate(3px,-1px);filter:hue-rotate(180deg);}30%{transform:translate(-2px,-3px);filter:hue-rotate(270deg);}40%{transform:translate(2px,3px);filter:hue-rotate(360deg);}50%{transform:translate(-3px,1px);filter:hue-rotate(120deg);}60%{transform:translate(3px,-2px);filter:hue-rotate(240deg);}70%{transform:translate(-1px,3px);filter:hue-rotate(60deg);}80%{transform:translate(2px,-3px);filter:hue-rotate(300deg);}90%{transform:translate(-2px,1px);filter:hue-rotate(200deg);}100%{transform:translate(0);filter:hue-rotate(0deg);}}
 @keyframes titleExplosion{0%{transform:scale(1);opacity:1;color:#c44;}30%{transform:scale(1.3);opacity:1;color:#c44;text-shadow:0 0 20px #c44;}70%{transform:scale(1.1);opacity:0.3;color:#e8a040;text-shadow:0 0 10px #e8a040;}100%{transform:scale(1);opacity:1;color:#1a1a1a;text-shadow:none;}}
 .hidden{display:none!important;}
+.timer-bar{width:100%;max-width:420px;height:6px;background:#d0ccc5;border-radius:3px;margin:0 auto 14px;overflow:hidden;}
+.timer-fill{height:100%;background:#1a1a1a;border-radius:3px;transition:width 0.3s linear;}
+.timer-fill.warning{background:#c88020;}
+.timer-fill.danger{background:#c44;}
+.timer-text{font-size:0.78em;color:#888;letter-spacing:0.08em;margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -155,6 +160,10 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
       <div class="mode-card" onclick="startReview()">
         <div class="mode-card-title">REVIEW <span id="review-count" style="font-weight:400;font-size:0.85em;color:#c44;"></span></div>
         <div class="mode-card-desc">Focus on words you got wrong or close. Build mastery where you need it most.</div>
+      </div>
+      <div class="mode-card" onclick="startTimed()">
+        <div class="mode-card-title">TIMED</div>
+        <div class="mode-card-desc">Race the clock. Time limit is based on word length and definition complexity.</div>
       </div>
     </div>
     <button class="btn btn-outline" onclick="showWordBank()">WORD BANK</button>
@@ -180,6 +189,10 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
     <div class="progress-bar" id="progress-bar"></div>
     <div class="score-board">
       <span id="current-num">1</span> / <span id="round-total">10</span> &middot; CORRECT <b id="current-score">0</b>
+    </div>
+    <div id="timer-wrap" class="hidden">
+      <div class="timer-text" id="timer-text"></div>
+      <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%;"></div></div>
     </div>
     <div class="review-panel" id="review-panel">
       <div class="review-title" id="review-label">REVIEW</div>
@@ -1089,6 +1102,7 @@ function hideAll() {
 
 function goHome() {
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  clearTimer();
   hideAll();
   document.getElementById('start-screen').classList.remove('hidden');
   updateReviewCount();
@@ -1126,6 +1140,34 @@ function startReview() {
   beginRound(words.splice(0, Math.min(10, words.length)));
 }
 
+function calcTimeLimit(word) {
+  var base = 5;
+  var wordLen = word.word.replace(/ /g, '').length;
+  base += wordLen * 0.8;
+  var defLen = word.definition.length;
+  base += defLen * 0.02;
+  if (word.word.indexOf(' ') !== -1) base += 3;
+  return Math.round(Math.max(5, Math.min(base, 30)));
+}
+
+var timedMode = false;
+var timeLimit = 0;
+var timeLeft = 0;
+var timerInterval = null;
+
+function startTimed() {
+  currentMode = 'TIMED';
+  timedMode = true;
+  var items = [];
+  for (var i = 0; i < allWords.length; i++) {
+    var w = allWords[i];
+    var k = w.word.toLowerCase();
+    items.push({word: w, weight: 1});
+  }
+  var picked = weightedSample(items, 10);
+  beginRound(picked);
+}
+
 function weightedSample(items, n) {
   var result = [];
   var pool = items.slice();
@@ -1152,11 +1194,15 @@ function beginRound(round) {
   roundResults = [];
   userAnswers = [];
   isShowingResult = false;
+  if (currentMode !== 'TIMED') timedMode = false;
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  clearTimer();
   hideAll();
   document.getElementById('game-screen').classList.remove('hidden');
   document.getElementById('game-mode-tag').textContent = currentMode;
   document.getElementById('round-total').textContent = currentRound.length;
+  if (timedMode) document.getElementById('timer-wrap').classList.remove('hidden');
+  else document.getElementById('timer-wrap').classList.add('hidden');
   showWord();
 }
 
@@ -1271,9 +1317,81 @@ function updateLetterHintFromInput() {
   }
 }
 
+function clearTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function startTimer(seconds) {
+  clearTimer();
+  timeLimit = seconds;
+  timeLeft = seconds;
+  var fill = document.getElementById('timer-fill');
+  var text = document.getElementById('timer-text');
+  fill.style.width = '100%';
+  fill.className = 'timer-fill';
+  text.textContent = timeLeft + 's';
+  timerInterval = setInterval(function() {
+    timeLeft--;
+    if (timeLeft < 0) timeLeft = 0;
+    var pct = (timeLeft / timeLimit) * 100;
+    fill.style.width = pct + '%';
+    text.textContent = timeLeft + 's';
+    if (pct < 25) fill.className = 'timer-fill danger';
+    else if (pct < 50) fill.className = 'timer-fill warning';
+    else fill.className = 'timer-fill';
+    if (timeLeft <= 0) {
+      clearTimer();
+      if (!isShowingResult) timeUp();
+    }
+  }, 1000);
+}
+
+function timeUp() {
+  var input = document.getElementById('answer-input');
+  if (input.value.trim() === '') {
+    userAnswers.push('');
+    roundResults.push('wrong');
+    var word = currentRound[currentIndex];
+    recordResult(word.word, 'wrong');
+    isShowingResult = true;
+    input.disabled = true;
+    input.style.display = 'none';
+    document.getElementById('submit-btn').style.display = 'none';
+    document.getElementById('translate-btn').style.display = 'none';
+    document.getElementById('cn-def').className = 'cn-def';
+    document.getElementById('current-score').textContent = score;
+    document.getElementById('card-question').style.display = 'none';
+    document.getElementById('word-card').className = 'word-card wrong-flash';
+    document.getElementById('card-result').className = 'result-overlay show';
+    document.getElementById('result-verdict').textContent = "TIME'S UP";
+    document.getElementById('result-verdict').className = 'result-verdict wrong-verdict';
+    document.getElementById('result-word-big').innerHTML = '';
+    document.getElementById('result-your-answer').innerHTML = '';
+    document.getElementById('result-correct-answer').textContent = word.word;
+    document.getElementById('result-def').textContent = word.definition;
+    currentSpeakWord = word.word;
+    speakCurrentWord();
+    var c = document.getElementById('result-cn');
+    if (word.cn) { c.textContent = word.cn; c.style.display = 'block'; }
+    else { c.textContent = ''; c.style.display = 'none'; }
+    var p = document.getElementById('result-phonetic');
+    if (word.phonetic) { p.textContent = word.phonetic; p.style.display = 'block'; }
+    else { p.textContent = ''; p.style.display = 'none'; }
+    buildDots();
+    document.getElementById('next-btn').style.display = 'none';
+    setTimeout(function() {
+      document.getElementById('next-btn').style.display = '';
+      document.getElementById('next-btn').focus();
+    }, 1200);
+  } else {
+    checkAnswer();
+  }
+}
+
 function showWord() {
   isShowingResult = false;
   resetCn();
+  clearTimer();
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
   var word = currentRound[currentIndex];
   document.getElementById('review-panel').classList.remove('show');
@@ -1299,10 +1417,12 @@ function showWord() {
   document.getElementById('auto-next-hint').style.display = 'none';
   buildLetterHint(word.word);
   buildDots();
+  if (timedMode) startTimer(calcTimeLimit(word));
 }
 
 function checkAnswer() {
   if (isShowingResult) return;
+  clearTimer();
   var input = document.getElementById('answer-input');
   var userAnswer = input.value.trim();
   if (!userAnswer) return;
@@ -1459,8 +1579,8 @@ function showResults() {
     var cbtn = document.getElementById('continue-btn');
     if (remaining > 0) cbtn.textContent = 'NEXT ROUND';
     else cbtn.textContent = 'RESTART (ALL DONE)';
-  } else if (currentMode === 'RANDOM') {
-    document.getElementById('continue-btn').textContent = 'NEW RANDOM ROUND';
+  } else if (currentMode === 'RANDOM' || currentMode === 'TIMED') {
+    document.getElementById('continue-btn').textContent = 'NEW ROUND';
   } else {
     document.getElementById('continue-btn').textContent = 'REVIEW AGAIN';
   }
@@ -1470,6 +1590,7 @@ function showResults() {
 function continueGame() {
   if (currentMode === 'SEQUENTIAL') startSequential();
   else if (currentMode === 'RANDOM') startRandom();
+  else if (currentMode === 'TIMED') startTimed();
   else startReview();
 }
 
