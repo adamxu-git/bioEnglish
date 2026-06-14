@@ -51,12 +51,14 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 .result-verdict.correct-verdict{color:#2a7a2a;border:2px solid #2a7a2a;}
 .result-verdict.wrong-verdict{color:#c44;border:2px solid #c44;}
 .result-verdict.close-verdict{color:#c88020;border:2px solid #c88020;}
-.result-word-big{font-size:2.2em;font-weight:700;letter-spacing:0.08em;margin-bottom:8px;}
+.result-word-big{font-size:2.2em;font-weight:700;letter-spacing:0.08em;margin-bottom:8px;cursor:pointer;}
+.result-word-big:hover{opacity:0.7;}
 .result-word-big.correct-green{color:#2a7a2a;}
 .result-word-big.close-orange{color:#c88020;}
 .result-your-answer{font-size:0.9em;color:#999;margin-bottom:6px;}
 .result-your-answer span{text-decoration:line-through;color:#b5b0a8;}
-.result-correct-answer{font-size:1.8em;font-weight:700;color:#2a7a2a;letter-spacing:0.06em;margin:4px 0;}
+.result-correct-answer{font-size:1.8em;font-weight:700;color:#2a7a2a;letter-spacing:0.06em;margin:4px 0;cursor:pointer;}
+.result-correct-answer:hover{opacity:0.7;}
 .result-def{font-size:0.82em;color:#888;margin-top:10px;line-height:1.5;font-style:italic;text-align:center;max-width:500px;}
 .result-phonetic{font-size:0.88em;color:#666;margin-top:4px;letter-spacing:0.04em;}
 .result-cn{font-size:0.8em;color:#999;margin-top:4px;line-height:1.4;text-align:center;max-width:500px;}
@@ -199,9 +201,9 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
       </div>
       <div class="result-overlay" id="card-result">
         <div id="result-verdict" class="result-verdict"></div>
-        <div id="result-word-big" class="result-word-big"></div>
+        <div id="result-word-big" class="result-word-big" onclick="speakCurrentWord()"></div>
         <div id="result-your-answer"></div>
-        <div id="result-correct-answer" class="result-correct-answer"></div>
+        <div id="result-correct-answer" class="result-correct-answer" onclick="speakCurrentWord()"></div>
         <div id="result-phonetic" class="result-phonetic"></div>
         <div id="result-def" class="result-def"></div>
         <div id="result-cn" class="result-cn"></div>
@@ -935,6 +937,7 @@ var allWords = [
 var wordPool = [];
 var currentRound = [];
 var currentMode = '';
+var currentSpeakWord = '';
 var currentIndex = 0;
 var score = 0;
 var roundResults = [];
@@ -1062,6 +1065,19 @@ function updateReviewCount() {
   }
   var el = document.getElementById('review-count');
   if (el) el.textContent = count > 0 ? '(' + count + ')' : '';
+}
+
+function speakWord(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  window.speechSynthesis.speak(u);
+}
+
+function speakCurrentWord() {
+  if (currentSpeakWord) speakWord(currentSpeakWord);
 }
 
 function hideAll() {
@@ -1308,6 +1324,8 @@ function checkAnswer() {
 
   if (resultType === 'correct') score++;
   recordResult(word.word, resultType);
+  currentSpeakWord = word.word;
+  speakCurrentWord();
 
   document.getElementById('current-score').textContent = score;
   document.getElementById('card-question').style.display = 'none';
