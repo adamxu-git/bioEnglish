@@ -1083,10 +1083,22 @@ function updateReviewCount() {
 function speakWord(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
+  var voices = window.speechSynthesis.getVoices();
   var u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US';
   u.rate = 0.85;
+  u.pitch = 1;
+  for (var i = 0; i < voices.length; i++) {
+    if (voices[i].lang.indexOf('en') === 0 && voices[i].localService === false) {
+      u.voice = voices[i];
+      break;
+    }
+  }
   window.speechSynthesis.speak(u);
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+  window.speechSynthesis.getVoices();
 }
 
 function speakCurrentWord() {
