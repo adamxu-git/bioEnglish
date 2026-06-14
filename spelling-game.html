@@ -210,6 +210,7 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
         <div class="letter-hint" id="letter-hint"></div>
         <div class="definition" id="definition"></div>
         <button class="translate-btn" id="translate-btn" onclick="toggleCn()">中文</button>
+        <button class="translate-btn" id="hint-btn" onclick="useHint()" style="margin-left:4px;">HINT</button>
         <div class="cn-def" id="cn-def"></div>
       </div>
       <div class="result-overlay" id="card-result">
@@ -951,6 +952,7 @@ var wordPool = [];
 var currentRound = [];
 var currentMode = '';
 var currentSpeakWord = '';
+var hintUsed = false;
 var currentIndex = 0;
 var score = 0;
 var roundResults = [];
@@ -1368,9 +1370,10 @@ function timeUp() {
     isShowingResult = true;
     input.disabled = true;
     input.style.display = 'none';
-    document.getElementById('submit-btn').style.display = 'none';
-    document.getElementById('translate-btn').style.display = 'none';
-    document.getElementById('cn-def').className = 'cn-def';
+  document.getElementById('submit-btn').style.display = 'none';
+  document.getElementById('translate-btn').style.display = 'none';
+  document.getElementById('hint-btn').style.display = 'none';
+  document.getElementById('cn-def').className = 'cn-def';
     document.getElementById('current-score').textContent = score;
     document.getElementById('card-question').style.display = 'none';
     document.getElementById('word-card').className = 'word-card wrong-flash';
@@ -1402,6 +1405,10 @@ function timeUp() {
 
 function showWord() {
   isShowingResult = false;
+  hintUsed = false;
+  var hintBtn = document.getElementById('hint-btn');
+  hintBtn.style.opacity = '';
+  hintBtn.style.pointerEvents = '';
   resetCn();
   clearTimer();
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
@@ -1425,6 +1432,7 @@ function showWord() {
   document.getElementById('submit-btn').style.display = '';
   document.getElementById('submit-btn').disabled = false;
   document.getElementById('translate-btn').style.display = '';
+  document.getElementById('hint-btn').style.display = '';
   document.getElementById('next-btn').style.display = 'none';
   document.getElementById('auto-next-hint').style.display = 'none';
   buildLetterHint(word.word);
@@ -1443,7 +1451,7 @@ function checkAnswer() {
   var isCorrect = userAnswer.toLowerCase() === word.word.toLowerCase();
   var dist = isCorrect ? 0 : levenshtein(userAnswer, word.word);
   var maxDist = Math.max(1, Math.floor(word.word.length * 0.25));
-  var resultType = isCorrect ? 'correct' : (dist <= maxDist ? 'close' : 'wrong');
+  var resultType = isCorrect ? (hintUsed ? 'close' : 'correct') : (dist <= maxDist ? 'close' : 'wrong');
   roundResults.push(resultType);
   userAnswers.push(userAnswer);
   isShowingResult = true;
@@ -1727,6 +1735,22 @@ function toggleReviewCn() {
   reviewCnVisible = !reviewCnVisible;
   if (reviewCnVisible && cnEl.textContent) { cnEl.style.display = 'block'; btn.textContent = 'EN'; }
   else { cnEl.style.display = 'none'; btn.textContent = '\u4e2d\u6587'; }
+}
+
+function useHint() {
+  if (isShowingResult || hintUsed) return;
+  hintUsed = true;
+  document.getElementById('hint-btn').style.opacity = '0.3';
+  document.getElementById('hint-btn').style.pointerEvents = 'none';
+  var word = currentRound[currentIndex].word;
+  var nonSpace = word.replace(/ /g, '');
+  var prefix = nonSpace.substring(0, 2);
+  var hint = document.getElementById('letter-hint');
+  var boxes = hint.querySelectorAll('.letter-box:not(.space)');
+  for (var i = 0; i < boxes.length && i < 2; i++) {
+    boxes[i].textContent = prefix.charAt(i);
+    boxes[i].classList.add('revealed');
+  }
 }
 
 function resetCn() {
