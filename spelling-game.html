@@ -235,6 +235,7 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
       <input type="text" id="answer-input" placeholder="type your answer..." autocomplete="off" autocapitalize="off" spellcheck="false" oninput="updateLetterHintFromInput()">
       <button class="btn" id="submit-btn" onclick="checkAnswer()">GO</button>
     </div>
+    <div id="debug-answer" style="display:none;font-size:0.78em;color:#c44;letter-spacing:0.06em;margin-top:-6px;margin-bottom:8px;"></div>
     <div id="next-area" style="margin-top:8px;">
       <button class="btn" id="next-btn" onclick="nextWord()" style="display:none;">NEXT &rarr;</button>
       <div id="auto-next-hint" style="display:none;"></div>
@@ -1460,6 +1461,7 @@ function timeUp() {
 function showWord() {
   isShowingResult = false;
   hintUsed = false;
+  document.getElementById('debug-answer').style.display = 'none';
   var hintBtn = document.getElementById('hint-btn');
   hintBtn.style.opacity = '';
   hintBtn.style.pointerEvents = '';
@@ -1831,10 +1833,27 @@ document.addEventListener('keydown', function(e) {
       if (!isShowingResult) checkAnswer();
     }
   }
+  if (e.key === '+' || e.key === '=') {
+    if (document.getElementById('game-screen').classList.contains('hidden')) return;
+    _debugPlus++;
+    if (_debugPlusTimer) clearTimeout(_debugPlusTimer);
+    _debugPlusTimer = setTimeout(function() { _debugPlus = 0; }, 800);
+    if (_debugPlus >= 5) {
+      _debugPlus = 0;
+      var el = document.getElementById('debug-answer');
+      if (currentRound.length > 0 && currentIndex < currentRound.length) {
+        el.textContent = currentRound[currentIndex].word;
+        el.style.display = '';
+      }
+      _debugPlusTimer = setTimeout(function() { el.style.display = 'none'; }, 3000);
+    }
+  }
 });
 
 var _titleClicks = 0;
 var _titleTimer = null;
+var _debugPlus = 0;
+var _debugPlusTimer = null;
 var _homeTitle = document.getElementById('home-title');
 _homeTitle.style.cursor = 'default';
 _homeTitle.style.userSelect = 'none';
