@@ -22,6 +22,22 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 .dot:hover:not(.current){transform:scale(1.2);}
 .score-board{margin-bottom:16px;font-size:0.85em;color:#888;letter-spacing:0.08em;}
 .score-board b{color:#1a1a1a;font-size:1.2em;}
+.streak-badge{display:none;margin-left:8px;padding:1px 6px;border-radius:2px;font-size:0.72em;font-weight:700;letter-spacing:0.1em;vertical-align:middle;position:relative;top:-2px;}
+.streak-badge.show{display:inline-block;}
+.streak-badge.s3{background:#e8a040;color:#fff;border:1.5px solid #c88020;animation:streakBounce 0.4s ease;}
+.streak-badge.s5{background:#c88020;color:#fff;border:2px solid #a06010;font-size:0.88em;padding:3px 14px;animation:streakSlam 0.5s cubic-bezier(0.17,0.89,0.32,1.28);}
+.streak-badge.s7{background:#2a7a2a;color:#fff;border:2px solid #1a5a1a;font-size:1em;padding:4px 16px;animation:streakBoom 0.6s cubic-bezier(0.17,0.89,0.32,1.28);text-shadow:0 0 8px rgba(42,122,42,0.5);}
+.streak-badge.s10{background:linear-gradient(135deg,#c44,#e8a040);color:#fff;border:2px solid #a03030;font-size:1.1em;padding:5px 18px;animation:streakMega 0.7s cubic-bezier(0.17,0.89,0.32,1.28);text-shadow:0 0 12px rgba(255,255,255,0.4);}
+.streak-badge.s9{background:#2a7a2a;color:#fff;border:2px solid #1a5a1a;font-size:0.95em;padding:3px 14px;animation:streakBoom 0.5s cubic-bezier(0.17,0.89,0.32,1.28),streakShake 0.15s 0.5s linear infinite;}
+@keyframes streakTick{0%{transform:scale(0.5);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
+@keyframes streakBounce{0%{transform:scale(0.3);opacity:0;}50%{transform:scale(1.3);}70%{transform:scale(0.9);}100%{transform:scale(1);opacity:1;}}
+@keyframes streakSlam{0%{transform:scale(2.5) rotate(-8deg);opacity:0;}40%{transform:scale(0.85) rotate(2deg);opacity:1;}60%{transform:scale(1.15) rotate(-1deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
+@keyframes streakBoom{0%{transform:scale(3) rotate(-12deg);opacity:0;}30%{transform:scale(0.8) rotate(3deg);opacity:1;}50%{transform:scale(1.3) rotate(-2deg);}70%{transform:scale(0.95) rotate(1deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
+@keyframes streakMega{0%{transform:scale(4) rotate(-15deg);opacity:0;filter:brightness(2);}25%{transform:scale(0.7) rotate(5deg);opacity:1;filter:brightness(1.5);}45%{transform:scale(1.5) rotate(-3deg);filter:brightness(1.2);}65%{transform:scale(0.9) rotate(1deg);filter:brightness(1);}100%{transform:scale(1) rotate(0);opacity:1;filter:brightness(1);}}
+@keyframes streakShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-2px) rotate(-1deg);}75%{transform:translateX(2px) rotate(1deg);}}
+@keyframes scoreFlash{0%{transform:scale(1.6);opacity:0.6;}100%{transform:scale(1);opacity:1;}}
+@keyframes scoreBigFlash{0%{transform:scale(2.2);opacity:0.5;}50%{transform:scale(1.1);opacity:1;}100%{transform:scale(1);opacity:1;}}
+@keyframes scoreMegaFlash{0%{transform:scale(3);opacity:0.3;text-shadow:0 0 20px #c44,0 0 40px #e8a040;}40%{transform:scale(0.9);opacity:1;text-shadow:0 0 10px #c44;}100%{transform:scale(1);opacity:1;text-shadow:none;}}
 .mode-tag{display:inline-block;color:#1a1a1a;padding:3px 12px;border:1.5px solid #1a1a1a;border-radius:2px;font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
 .word-card{background:#faf8f4;border:2px solid #1a1a1a;border-radius:2px;padding:32px 24px;margin-bottom:20px;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all 0.4s;}
 .word-card.correct-flash{background:#1a1a1a!important;border-color:#1a1a1a;animation:correctPulse 0.6s ease;}
@@ -188,7 +204,7 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
     <div class="mode-tag" id="game-mode-tag"></div>
     <div class="progress-bar" id="progress-bar"></div>
     <div class="score-board">
-      <span id="current-num">1</span> / <span id="round-total">10</span> &middot; CORRECT <b id="current-score">0</b>
+      <span id="current-num">1</span> / <span id="round-total">10</span> &middot; CORRECT <b id="current-score">0</b><span id="streak-badge" class="streak-badge"></span>
     </div>
     <div id="timer-wrap" class="hidden">
       <div class="timer-text" id="timer-text"></div>
@@ -227,6 +243,7 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
       <input type="text" id="answer-input" placeholder="type your answer..." autocomplete="off" autocapitalize="off" spellcheck="false" oninput="updateLetterHintFromInput()">
       <button class="btn" id="submit-btn" onclick="checkAnswer()">GO</button>
     </div>
+    <div id="debug-answer" style="display:none;font-size:0.78em;color:#c44;letter-spacing:0.06em;margin-top:-6px;margin-bottom:8px;"></div>
     <div id="next-area" style="margin-top:8px;">
       <button class="btn" id="next-btn" onclick="nextWord()" style="display:none;">NEXT &rarr;</button>
       <div id="auto-next-hint" style="display:none;"></div>
@@ -953,6 +970,51 @@ var currentRound = [];
 var currentMode = '';
 var currentSpeakWord = '';
 var hintUsed = false;
+var streak = 0;
+var audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return audioCtx;
+}
+
+function playTone(freq, duration, type, vol) {
+  var ctx = getAudioCtx();
+  if (!ctx) return;
+  var osc = ctx.createOscillator();
+  var gain = ctx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+  gain.gain.value = vol || 0.15;
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + duration);
+}
+
+function sfxCorrect() {
+  playTone(880, 0.18, 'sine', 0.35);
+  setTimeout(function() { playTone(1320, 0.22, 'sine', 0.3); }, 100);
+}
+
+function sfxClose() {
+  playTone(660, 0.22, 'triangle', 0.3);
+}
+
+function sfxWrong() {
+  playTone(220, 0.35, 'sawtooth', 0.25);
+  setTimeout(function() { playTone(180, 0.25, 'sawtooth', 0.2); }, 150);
+}
+
+function sfxStreak(n) {
+  var base = 660 + n * 80;
+  playTone(base, 0.15, 'sine', 0.35);
+  setTimeout(function() { playTone(base + 260, 0.15, 'sine', 0.3); }, 80);
+  setTimeout(function() { playTone(base + 440, 0.2, 'sine', 0.25); }, 160);
+}
 var currentIndex = 0;
 var score = 0;
 var roundResults = [];
@@ -1117,6 +1179,9 @@ function hideAll() {
 function goHome() {
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
   clearTimer();
+  streak = 0;
+  document.getElementById('streak-badge').className = 'streak-badge';
+  document.getElementById('streak-badge').textContent = '';
   hideAll();
   document.getElementById('start-screen').classList.remove('hidden');
   updateReviewCount();
@@ -1205,6 +1270,9 @@ function beginRound(round) {
   currentRound = round;
   currentIndex = 0;
   score = 0;
+  streak = 0;
+  document.getElementById('streak-badge').className = 'streak-badge';
+  document.getElementById('streak-badge').textContent = '';
   roundResults = [];
   userAnswers = [];
   isShowingResult = false;
@@ -1385,7 +1453,7 @@ function timeUp() {
     document.getElementById('result-correct-answer').textContent = word.word;
     document.getElementById('result-def').textContent = word.definition;
     currentSpeakWord = word.word;
-    speakCurrentWord();
+    setTimeout(function() { speakCurrentWord(); }, 300);
     var c = document.getElementById('result-cn');
     if (word.cn) { c.textContent = word.cn; c.style.display = 'block'; }
     else { c.textContent = ''; c.style.display = 'none'; }
@@ -1406,6 +1474,7 @@ function timeUp() {
 function showWord() {
   isShowingResult = false;
   hintUsed = false;
+  document.getElementById('debug-answer').style.display = 'none';
   var hintBtn = document.getElementById('hint-btn');
   hintBtn.style.opacity = '';
   hintBtn.style.pointerEvents = '';
@@ -1460,12 +1529,63 @@ function checkAnswer() {
   input.style.display = 'none';
   document.getElementById('submit-btn').style.display = 'none';
   document.getElementById('translate-btn').style.display = 'none';
+  document.getElementById('hint-btn').style.display = 'none';
   document.getElementById('cn-def').className = 'cn-def';
+
+  if (resultType === 'correct') { streak++; sfxCorrect(); }
+  else if (resultType === 'close') { streak = 0; sfxClose(); }
+  else { streak = 0; sfxWrong(); }
+
+  var badge = document.getElementById('streak-badge');
+  var scoreEl = document.getElementById('current-score');
+  var cls = 'streak-badge';
+  var doSfx = false;
+  var scoreAnim = '';
+
+  if (streak >= 10) {
+    badge.textContent = streak + 'x STREAK!!!';
+    cls += ' show s10';
+    doSfx = true;
+    scoreAnim = 'scoreMegaFlash 0.6s ease';
+    scoreEl.style.color = '#c44';
+  } else if (streak >= 9) {
+    badge.textContent = streak + 'x STREAK!!';
+    cls += ' show s9';
+    doSfx = true;
+    scoreAnim = 'scoreBigFlash 0.4s ease';
+    scoreEl.style.color = '#2a7a2a';
+  } else if (streak >= 7) {
+    badge.textContent = streak + 'x STREAK!!';
+    cls += ' show s7';
+    doSfx = true;
+    scoreAnim = 'scoreBigFlash 0.4s ease';
+    scoreEl.style.color = '#2a7a2a';
+  } else if (streak >= 5) {
+    badge.textContent = streak + 'x STREAK!';
+    cls += ' show s5';
+    doSfx = true;
+    scoreAnim = 'scoreBigFlash 0.4s ease';
+    scoreEl.style.color = '#c88020';
+  } else if (streak >= 3) {
+    badge.textContent = streak + 'x STREAK';
+    cls += ' show s3';
+    scoreAnim = 'scoreFlash 0.3s ease';
+  } else {
+    badge.textContent = '';
+  }
+  badge.className = cls;
+  if (doSfx) sfxStreak(streak);
+  if (scoreAnim) {
+    scoreEl.style.animation = 'none';
+    void scoreEl.offsetWidth;
+    scoreEl.style.animation = scoreAnim;
+    setTimeout(function() { scoreEl.style.color = ''; scoreEl.style.animation = ''; }, 600);
+  }
 
   if (resultType === 'correct') score++;
   recordResult(word.word, resultType);
   currentSpeakWord = word.word;
-  speakCurrentWord();
+  setTimeout(function() { speakCurrentWord(); }, 300);
 
   document.getElementById('current-score').textContent = score;
   document.getElementById('card-question').style.display = 'none';
@@ -1766,10 +1886,27 @@ document.addEventListener('keydown', function(e) {
       if (!isShowingResult) checkAnswer();
     }
   }
+  if (e.key === '+' || e.key === '=') {
+    if (document.getElementById('game-screen').classList.contains('hidden')) return;
+    _debugPlus++;
+    if (_debugPlusTimer) clearTimeout(_debugPlusTimer);
+    _debugPlusTimer = setTimeout(function() { _debugPlus = 0; }, 800);
+    if (_debugPlus >= 5) {
+      _debugPlus = 0;
+      var el = document.getElementById('debug-answer');
+      if (currentRound.length > 0 && currentIndex < currentRound.length) {
+        el.textContent = currentRound[currentIndex].word;
+        el.style.display = '';
+      }
+      _debugPlusTimer = setTimeout(function() { el.style.display = 'none'; }, 3000);
+    }
+  }
 });
 
 var _titleClicks = 0;
 var _titleTimer = null;
+var _debugPlus = 0;
+var _debugPlusTimer = null;
 var _homeTitle = document.getElementById('home-title');
 _homeTitle.style.cursor = 'default';
 _homeTitle.style.userSelect = 'none';
