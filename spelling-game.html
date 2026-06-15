@@ -1530,7 +1530,7 @@ function startSurvival() {
 
 function survivalTick() {
   var elapsed = (Date.now() - survivalStartTime) / 1000;
-  survivalTime = 60 - elapsed + survivalBonusEarned;
+  survivalTime = 60 - elapsed;
   if (survivalTime <= 0) {
     survivalTime = 0;
     survivalEnd();
@@ -1550,6 +1550,13 @@ var survivalBonusEarned = 0;
 
 function survivalAddTime(sec) {
   survivalBonusEarned += sec;
+  survivalStartTime += sec * 1000;
+}
+
+var survivalBonusEarned = 0;
+
+function survivalAddTime(sec) {
+  survivalBonusEarned += sec;
   survivalTime += sec;
   survivalStartTime += sec * 1000;
 }
@@ -1557,7 +1564,6 @@ function survivalAddTime(sec) {
 function survivalEnd() {
   if (survivalInterval) { clearInterval(survivalInterval); survivalInterval = null; }
   clearTimer();
-  isShowingResult = true;
   document.getElementById('vignette').className = 'vignette';
   document.body.classList.add('flash-red');
   setTimeout(function() { document.body.classList.remove('flash-red'); }, 500);
@@ -1630,6 +1636,8 @@ function beginRound(round) {
     document.getElementById('survival-words').textContent = survivalWords;
     document.getElementById('survival-score').textContent = survivalScoreVal;
     document.getElementById('vignette').className = 'vignette';
+    document.body.classList.remove('flash-red');
+    document.body.classList.remove('event-freeze');
     if (survivalInterval) clearInterval(survivalInterval);
     survivalInterval = setInterval(survivalTick, 100);
   } else {
