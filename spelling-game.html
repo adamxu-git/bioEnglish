@@ -172,19 +172,24 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 .survival-time.danger{color:#c44;}
 .survival-score-badge{font-size:0.82em;color:#888;letter-spacing:0.1em;margin-top:2px;}
 .survival-score-badge b{font-size:1.2em;color:#1a1a1a;}
-.survival-bonus{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);font-size:1.1em;font-weight:700;pointer-events:none;opacity:0;z-index:100;animation:bonusFloat 0.8s ease forwards;}
+.survival-bonus{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:1.8em;font-weight:700;pointer-events:none;opacity:0;z-index:100;animation:bonusFloat 2.5s ease forwards;text-shadow:0 2px 8px rgba(0,0,0,0.15);}
 .survival-bonus.plus{color:#2a7a2a;}
 .survival-bonus.close-plus{color:#c88020;}
-.survival-event-banner{position:fixed;top:15%;left:50%;transform:translate(-50%,-50%);z-index:100;pointer-events:none;text-align:center;animation:eventBannerIn 0.4s cubic-bezier(0.17,0.89,0.32,1.28) forwards;}
+.survival-bonus.danger{color:#c44;}
+.survival-event-banner{position:fixed;top:15%;left:50%;transform:translate(-50%,-50%);z-index:100;pointer-events:none;text-align:center;animation:eventBannerShow 2.5s ease forwards;background:#faf8f4;border:2px solid #1a1a1a;border-radius:4px;padding:16px 28px;box-shadow:0 4px 20px rgba(0,0,0,0.15);}
+.survival-event-banner.negative{border-color:#c44;background:#fff0f0;}
+.survival-event-banner.negative .event-name{color:#c44;}
 .survival-event-banner .event-icon{font-size:2.6em;margin-bottom:4px;}
-.survival-event-banner .event-name{font-size:1.2em;font-weight:700;letter-spacing:0.1em;}
-.survival-event-banner .event-desc{font-size:0.78em;color:#666;margin-top:2px;}
-@keyframes eventBannerIn{0%{opacity:0;transform:translate(-50%,-50%) scale(2);}40%{opacity:1;transform:translate(-50%,-50%) scale(1);}70%{transform:translate(-50%,-50%) scale(1.05);}100%{opacity:0;transform:translate(-50%,-50%) scale(0.9) translateY(-20px);}}
+.survival-event-banner .event-name{font-size:1.2em;font-weight:700;letter-spacing:0.1em;color:#1a1a1a;}
+.survival-event-banner .event-desc{font-size:0.82em;color:#666;margin-top:4px;}
+@keyframes eventBannerShow{0%{opacity:0;transform:translate(-50%,-50%) scale(0.3);}10%{opacity:1;transform:translate(-50%,-50%) scale(1.08);}15%{transform:translate(-50%,-50%) scale(1);}80%{opacity:1;transform:translate(-50%,-50%) scale(1);}100%{opacity:0;transform:translate(-50%,-50%) scale(0.9) translateY(-10px);}}
 .event-freeze{animation:freezeFlash 1.5s ease!important;}
 @keyframes freezeFlash{0%{filter:brightness(2) hue-rotate(180deg);}100%{filter:none;}}
 .event-double .survival-score-badge b{color:#c88020!important;}
 .event-shield .word-card{border-color:#4a90d9!important;box-shadow:0 0 20px rgba(74,144,217,0.3);}
-@keyframes bonusFloat{0%{opacity:1;transform:translate(-50%,-50%) scale(0.5);}30%{transform:translate(-50%,-80%) scale(1.2);}100%{opacity:0;transform:translate(-50%,-120%) scale(0.8);}}
+.event-slow .survival-time{color:#c44!important;animation:slowPulse 1s ease infinite;}
+@keyframes slowPulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+@keyframes bonusFloat{0%{opacity:1;transform:translate(-50%,-50%) scale(0.5);}20%{transform:translate(-50%,-70%) scale(1.3);}80%{opacity:1;transform:translate(-50%,-110%) scale(1);}100%{opacity:0;transform:translate(-50%,-140%) scale(0.9);}}
 .vignette{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;transition:box-shadow 0.5s;}
 .vignette.v1{box-shadow:inset 0 0 80px 20px rgba(196,68,68,0);}
 .vignette.v2{box-shadow:inset 0 0 100px 30px rgba(196,68,68,0.15);}
@@ -288,7 +293,7 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
     <h1>BIOSPELL</h1>
     <div class="mode-tag" id="game-mode-tag"></div>
     <div class="progress-bar" id="progress-bar"></div>
-    <div class="score-board">
+    <div class="score-board" id="score-board">
       <span id="current-num">1</span> / <span id="round-total">10</span> &middot; CORRECT <b id="current-score">0</b><span id="streak-badge" class="streak-badge"></span>
     </div>
     <div id="timer-wrap" class="hidden">
@@ -1074,16 +1079,18 @@ function getAudioCtx() {
 function playTone(freq, duration, type, vol) {
   var ctx = getAudioCtx();
   if (!ctx) return;
-  var osc = ctx.createOscillator();
-  var gain = ctx.createGain();
-  osc.type = type || 'sine';
-  osc.frequency.value = freq;
-  gain.gain.value = vol || 0.15;
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + duration);
+  try {
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.value = vol || 0.15;
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
 }
 
 var settings = {sfxCorrect:true,sfxClose:true,sfxWrong:true,sfxStreak:true,sfxSpeak:true,sfxTimer:true};
@@ -1339,30 +1346,50 @@ function showSurvivalBonus(text, cls) {
   el.className = 'survival-bonus ' + cls;
   el.textContent = text;
   document.body.appendChild(el);
-  setTimeout(function() { el.remove(); }, 800);
+  setTimeout(function() { el.remove(); }, 2500);
 }
 
 var survivalEventActive = null;
 var survivalEventTimer = null;
 var survivalDoubleScore = false;
 var survivalShieldActive = false;
+var survivalScrambleActive = false;
+var survivalFreeHint = false;
+var survivalFreePass = false;
+var survivalStreakBonus = false;
+var survivalFogActive = false;
+var survivalNoHint = false;
+var survivalSlowActive = false;
 
 var survivalEvents = [
-  {id:'freeze', name:'TIME FREEZE', icon:'\u2744', desc:'Timer paused 5s', chance:0.08, duration:5000},
-  {id:'double', name:'DOUBLE SCORE', icon:'\u00d72', desc:'Next 2 words x2 score', chance:0.1, duration:2},
-  {id:'gift', name:'TIME GIFT', icon:'\U0001f381', desc:'+10 seconds!', chance:0.06, duration:0},
-  {id:'shield', name:'WRONG SHIELD', icon:'\u26e8', desc:'Next wrong costs no time', chance:0.08, duration:1},
-  {id:'surge', name:'ADRENALINE', icon:'\u26a1', desc:'+8 seconds!', chance:0.05, duration:0},
-  {id:'frenzy', name:'FRENZY', icon:'\U0001f525', desc:'+3s per word for 3 words', chance:0.04, duration:3},
-  {id:'miracle', name:'MIRACLE', icon:'\u2728', desc:'+15 seconds!', chance:0.02, duration:0}
+  {id:'freeze', name:'TIME FREEZE', icon:'\u2744', desc:'Timer paused 5s', chance:0.10, duration:5000, positive:true},
+  {id:'double', name:'DOUBLE SCORE', icon:'\u00d72', desc:'Next 2 words x2 score', chance:0.12, duration:2, positive:true},
+  {id:'gift', name:'TIME GIFT', icon:'\uD83C\uDF81', desc:'+10 seconds!', chance:0.08, duration:0, positive:true},
+  {id:'shield', name:'WRONG SHIELD', icon:'\u26e8', desc:'Next wrong costs no time', chance:0.10, duration:1, positive:true},
+  {id:'surge', name:'ADRENALINE', icon:'\u26a1', desc:'+8 seconds!', chance:0.07, duration:0, positive:true},
+  {id:'frenzy', name:'FRENZY', icon:'\uD83D\uDD25', desc:'+3s per word for 3 words', chance:0.05, duration:3, positive:true},
+  {id:'miracle', name:'MIRACLE', icon:'\u2728', desc:'+15 seconds!', chance:0.03, duration:0, positive:true},
+  {id:'heal', name:'HEAL', icon:'\u2764', desc:'+5 seconds!', chance:0.12, duration:0, positive:true},
+  {id:'hint', name:'FREE HINT', icon:'\uD83D\uDCA1', desc:'Next word reveals 3 letters', chance:0.10, duration:1, positive:true},
+  {id:'skip', name:'FREE PASS', icon:'\u23ed', desc:'Skip next wrong answer', chance:0.06, duration:1, positive:true},
+  {id:'streak', name:'STREAK BOOST', icon:'\uD83D\uDD25', desc:'Next correct = +3 bonus seconds', chance:0.08, duration:1, positive:true},
+  {id:'drain', name:'TIME DRAIN', icon:'\u23f0', desc:'-5 seconds!', chance:0.10, duration:0, positive:false},
+  {id:'scramble', name:'SCRAMBLE', icon:'\u2194', desc:'Next word scrambled hint', chance:0.08, duration:1, positive:false},
+  {id:'fog', name:'FOG', icon:'\u2601', desc:'Definition hidden for 1 word', chance:0.07, duration:1, positive:false},
+  {id:'slow', name:'SLOW MOTION', icon:'\u23f3', desc:'Timer runs 2x for 15s', chance:0.06, duration:15000, positive:false},
+  {id:'blinder', name:'BLINDER', icon:'\uD83D\uDD76', desc:'No letter hints next word', chance:0.08, duration:1, positive:false}
 ];
 
 function maybeSurvivalEvent() {
   if (!survivalMode) return;
   if (survivalEventActive) return;
+  var timeRatio = survivalTime / 60;
   for (var i = 0; i < survivalEvents.length; i++) {
     var evt = survivalEvents[i];
-    if (Math.random() < evt.chance) {
+    var c = evt.chance;
+    if (evt.positive) c = c * (1.8 - timeRatio);
+    else c = c * (0.4 + timeRatio * 1.4);
+    if (Math.random() < c) {
       triggerSurvivalEvent(evt);
       return;
     }
@@ -1371,25 +1398,34 @@ function maybeSurvivalEvent() {
 
 function triggerSurvivalEvent(evt) {
   survivalEventActive = evt.id;
-  showEventBanner(evt.icon, evt.name, evt.desc);
+  showEventBanner(evt.icon, evt.name, evt.desc, !evt.positive);
 
   if (evt.id === 'freeze') {
-    var pauseStart = Date.now();
-    survivalStartTime += evt.duration;
     document.body.classList.add('event-freeze');
+    survivalStartTime += evt.duration;
     survivalEventTimer = setTimeout(function() {
       document.body.classList.remove('event-freeze');
       survivalEventActive = null;
     }, evt.duration);
   } else if (evt.id === 'double') {
     survivalDoubleScore = true;
-    survivalEventTimer = setTimeout(function() { survivalDoubleScore = false; survivalEventActive = null; }, 99999);
+    document.body.classList.add('event-double');
+    survivalEventTimer = setTimeout(function() {
+      survivalDoubleScore = false;
+      survivalEventActive = null;
+      document.body.classList.remove('event-double');
+    }, 99999);
   } else if (evt.id === 'gift') {
     survivalAddTime(10);
     survivalEventActive = null;
   } else if (evt.id === 'shield') {
     survivalShieldActive = true;
-    survivalEventTimer = setTimeout(function() { survivalShieldActive = false; survivalEventActive = null; }, 99999);
+    document.body.classList.add('event-shield');
+    survivalEventTimer = setTimeout(function() {
+      survivalShieldActive = false;
+      survivalEventActive = null;
+      document.body.classList.remove('event-shield');
+    }, 99999);
   } else if (evt.id === 'surge') {
     survivalAddTime(8);
     survivalEventActive = null;
@@ -1399,15 +1435,54 @@ function triggerSurvivalEvent(evt) {
   } else if (evt.id === 'miracle') {
     survivalAddTime(15);
     survivalEventActive = null;
+  } else if (evt.id === 'drain') {
+    var drain = Math.min(survivalTime - 1, 5);
+    if (drain > 0) { survivalTime -= drain; survivalStartTime += drain * 1000; showSurvivalBonus('-' + drain + 's', 'danger'); }
+    survivalEventActive = null;
+  } else if (evt.id === 'scramble') {
+    survivalScrambleActive = true;
+    survivalEventActive = null;
+  } else if (evt.id === 'heal') {
+    survivalAddTime(5);
+    survivalEventActive = null;
+  } else if (evt.id === 'hint') {
+    survivalFreeHint = true;
+    survivalEventActive = null;
+  } else if (evt.id === 'skip') {
+    survivalFreePass = true;
+    survivalEventActive = null;
+  } else if (evt.id === 'streak') {
+    survivalStreakBonus = true;
+    survivalEventActive = null;
+  } else if (evt.id === 'fog') {
+    survivalFogActive = true;
+    survivalEventActive = null;
+  } else if (evt.id === 'slow') {
+    survivalSlowActive = true;
+    document.body.classList.add('event-slow');
+    var slowDrain = setInterval(function() {
+      if (!survivalSlowActive) { clearInterval(slowDrain); return; }
+      survivalTime -= 0.1;
+      survivalStartTime += 100;
+    }, 100);
+    survivalEventTimer = setTimeout(function() {
+      survivalSlowActive = false;
+      survivalEventActive = null;
+      document.body.classList.remove('event-slow');
+      clearInterval(slowDrain);
+    }, evt.duration);
+  } else if (evt.id === 'blinder') {
+    survivalNoHint = true;
+    survivalEventActive = null;
   }
 }
 
-function showEventBanner(icon, name, desc) {
+function showEventBanner(icon, name, desc, negative) {
   var el = document.createElement('div');
-  el.className = 'survival-event-banner';
+  el.className = 'survival-event-banner' + (negative ? ' negative' : '');
   el.innerHTML = '<div class="event-icon">' + icon + '</div><div class="event-name">' + name + '</div><div class="event-desc">' + desc + '</div>';
   document.body.appendChild(el);
-  setTimeout(function() { el.remove(); }, 1400);
+  setTimeout(function() { el.remove(); }, 2600);
 }
 
 function updateVignette() {
@@ -1427,11 +1502,24 @@ function goHome() {
   survivalMode = false;
   survivalDoubleScore = false;
   survivalShieldActive = false;
+  survivalScrambleActive = false;
+  survivalFreeHint = false;
+  survivalFreePass = false;
+  survivalStreakBonus = false;
+  survivalFogActive = false;
+  survivalNoHint = false;
+  survivalSlowActive = false;
   survivalEventActive = null;
   streak = 0;
   document.getElementById('streak-badge').className = 'streak-badge';
   document.getElementById('streak-badge').textContent = '';
   document.getElementById('vignette').className = 'vignette';
+  document.body.classList.remove('event-freeze');
+  document.body.classList.remove('event-double');
+  document.body.classList.remove('event-shield');
+  document.body.classList.remove('event-slow');
+  document.body.classList.remove('flash-red');
+  document.body.classList.remove('screen-shake');
   document.getElementById('score-board').style.display = '';
   hideAll();
   document.getElementById('start-screen').classList.remove('hidden');
@@ -1517,6 +1605,13 @@ function startSurvival() {
   survivalCorrectCount = 0;
   survivalDoubleScore = false;
   survivalShieldActive = false;
+  survivalScrambleActive = false;
+  survivalFreeHint = false;
+  survivalFreePass = false;
+  survivalStreakBonus = false;
+  survivalFogActive = false;
+  survivalNoHint = false;
+  survivalSlowActive = false;
   survivalEventActive = null;
   if (survivalEventTimer) { clearTimeout(survivalEventTimer); survivalEventTimer = null; }
   var items = [];
@@ -1529,6 +1624,8 @@ function startSurvival() {
 }
 
 function survivalTick() {
+  if (!survivalMode || !survivalInterval) return;
+  try {
   var elapsed = (Date.now() - survivalStartTime) / 1000;
   survivalTime = 60 - elapsed;
   if (survivalTime <= 0) {
@@ -1537,6 +1634,7 @@ function survivalTick() {
     return;
   }
   var el = document.getElementById('survival-time');
+  if (!el) return;
   el.textContent = survivalTime.toFixed(1);
   el.className = 'survival-time' + (survivalTime <= 5 ? ' danger' : survivalTime <= 15 ? ' warning' : '');
   updateVignette();
@@ -1544,13 +1642,7 @@ function survivalTick() {
     var frac = survivalTime - Math.floor(survivalTime);
     if (frac < 0.15) sfxTimerCountdown(Math.ceil(survivalTime));
   }
-}
-
-var survivalBonusEarned = 0;
-
-function survivalAddTime(sec) {
-  survivalBonusEarned += sec;
-  survivalStartTime += sec * 1000;
+  } catch(e) { /* prevent tick errors from breaking the game */ }
 }
 
 var survivalBonusEarned = 0;
@@ -1644,6 +1736,17 @@ function beginRound(round) {
     document.getElementById('vignette').className = 'vignette';
   }
   showWord();
+  if (survivalMode) {
+    setTimeout(function() {
+      if (survivalMode && currentRound.length > 0 && currentIndex < currentRound.length) {
+        var defEl = document.getElementById('definition');
+        if (defEl && !defEl.textContent) {
+          defEl.textContent = currentRound[currentIndex].definition;
+        }
+        document.getElementById('survival-time').textContent = survivalTime.toFixed(1);
+      }
+    }, 50);
+  }
 }
 
 function buildDots() {
@@ -1841,7 +1944,9 @@ function showWord() {
   resetCn();
   clearTimer();
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  if (!currentRound || currentIndex < 0 || currentIndex >= currentRound.length) return;
   var word = currentRound[currentIndex];
+  if (!word) return;
   document.getElementById('review-panel').classList.remove('show');
   document.getElementById('lesson-tag').textContent = word.lesson;
   document.getElementById('definition').textContent = word.definition;
@@ -1865,8 +1970,59 @@ function showWord() {
   document.getElementById('next-btn').style.display = 'none';
   document.getElementById('auto-next-hint').style.display = 'none';
   buildLetterHint(word.word);
+  if (survivalMode && survivalNoHint) {
+    document.getElementById('letter-hint').style.display = 'none';
+    survivalNoHint = false;
+  } else {
+    document.getElementById('letter-hint').style.display = '';
+  }
+  if (survivalMode && survivalScrambleActive) {
+    scrambleHint();
+    survivalScrambleActive = false;
+  }
+  if (survivalMode && survivalFreeHint) {
+    var fboxes = document.getElementById('letter-hint').querySelectorAll('.letter-box:not(.space)');
+    var revealCount = Math.min(3, fboxes.length);
+    for (var fi = 0; fi < revealCount; fi++) {
+      fboxes[fi].textContent = word.word.replace(/ /g, '').charAt(fi);
+      fboxes[fi].classList.add('revealed');
+    }
+    survivalFreeHint = false;
+  }
+  if (survivalMode && survivalFogActive) {
+    document.getElementById('definition').textContent = '???';
+    survivalFogActive = false;
+  }
   if (!survivalMode) buildDots();
   if (timedMode) startTimer(calcTimeLimit(word));
+}
+
+function scrambleHint() {
+  var hint = document.getElementById('letter-hint');
+  var boxes = hint.querySelectorAll('.letter-box:not(.space)');
+  var letters = [];
+  for (var i = 0; i < boxes.length; i++) {
+    if (boxes[i].classList.contains('revealed') || boxes[i].classList.contains('typed')) {
+      letters.push(boxes[i].textContent);
+    } else {
+      letters.push('_');
+    }
+  }
+  var reveal = [];
+  for (var i = 0; i < letters.length; i++) {
+    if (letters[i] !== '_') reveal.push({idx: i, ch: letters[i]});
+  }
+  var nonSpaceLetters = [];
+  var word = currentRound[currentIndex].word.replace(/ /g, '');
+  for (var i = 0; i < word.length; i++) nonSpaceLetters.push(word.charAt(i));
+  for (var i = nonSpaceLetters.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = nonSpaceLetters[i]; nonSpaceLetters[i] = nonSpaceLetters[j]; nonSpaceLetters[j] = tmp;
+  }
+  for (var i = 0; i < boxes.length; i++) {
+    boxes[i].textContent = nonSpaceLetters[i] || '_';
+    boxes[i].className = 'letter-box';
+  }
 }
 
 function checkAnswer() {
@@ -1881,6 +2037,11 @@ function checkAnswer() {
   var dist = isCorrect ? 0 : levenshtein(userAnswer, word.word);
   var maxDist = Math.max(1, Math.floor(word.word.length * 0.25));
   var resultType = isCorrect ? (hintUsed ? 'close' : 'correct') : (dist <= maxDist ? 'close' : 'wrong');
+  if (resultType === 'wrong' && survivalMode && survivalFreePass) {
+    resultType = 'close';
+    survivalFreePass = false;
+    showSurvivalBonus('FREE PASS!', 'plus');
+  }
   roundResults.push(resultType);
   userAnswers.push(userAnswer);
   isShowingResult = true;
@@ -1951,11 +2112,16 @@ function checkAnswer() {
     var bonus = 0;
     if (resultType === 'correct') {
       survivalCorrectCount++;
-      var addTime = Math.max(2, 5 - Math.floor(survivalCorrectCount / 5));
+      var wordLen = word.word.replace(/ /g, '').length;
+      var addTime = Math.max(2, Math.round(2 + wordLen * 0.5) - Math.floor(survivalCorrectCount / 5));
       if (survivalDoubleScore) {
         addTime *= 2;
         survivalDoubleScore = false;
         survivalEventActive = null;
+      }
+      if (survivalStreakBonus) {
+        addTime += 3;
+        survivalStreakBonus = false;
       }
       survivalAddTime(addTime);
       bonus = addTime;
@@ -1967,9 +2133,11 @@ function checkAnswer() {
       survivalScoreVal += pts;
       maybeSurvivalEvent();
     } else if (resultType === 'close') {
-      survivalAddTime(2);
-      bonus = 2;
+      var closeTime = Math.max(1, Math.round(1 + word.word.replace(/ /g, '').length * 0.3));
+      survivalAddTime(closeTime);
+      bonus = closeTime;
       survivalScoreVal += 30;
+      maybeSurvivalEvent();
     } else {
       if (survivalShieldActive) {
         survivalShieldActive = false;
@@ -1979,6 +2147,7 @@ function checkAnswer() {
       survivalScoreVal += 10;
       document.body.classList.add('screen-shake');
       setTimeout(function() { document.body.classList.remove('screen-shake'); }, 300);
+      maybeSurvivalEvent();
     }
     document.getElementById('survival-words').textContent = survivalWords;
     document.getElementById('survival-score').textContent = survivalScoreVal;
@@ -2015,7 +2184,7 @@ function checkAnswer() {
     setCn(word); setPhonetic(word);
     launchConfetti();
     if (!survivalMode) buildDots();
-    if (!survivalMode) startAutoNext(2);
+    if (survivalMode) startAutoNext(1.5); else startAutoNext(2);
   } else if (resultType === 'close') {
     card.className = 'word-card close-flash';
     document.getElementById('result-verdict').textContent = 'CLOSE';
@@ -2027,7 +2196,7 @@ function checkAnswer() {
     document.getElementById('result-def').textContent = word.definition;
     setCn(word); setPhonetic(word);
     if (!survivalMode) buildDots();
-    if (!survivalMode) startAutoNext(3);
+    if (survivalMode) startAutoNext(2); else startAutoNext(3);
   } else {
     card.className = 'word-card wrong-flash';
     document.getElementById('result-verdict').textContent = 'INCORRECT';
@@ -2038,19 +2207,23 @@ function checkAnswer() {
     document.getElementById('result-def').textContent = word.definition;
     setCn(word); setPhonetic(word);
     if (!survivalMode) buildDots();
-    document.getElementById('next-btn').style.display = 'none';
-    setTimeout(function() {
-      document.getElementById('next-btn').style.display = '';
-      document.getElementById('next-btn').focus();
-    }, 1200);
+    if (survivalMode) startAutoNext(2);
+    else {
+      document.getElementById('next-btn').style.display = 'none';
+      setTimeout(function() {
+        document.getElementById('next-btn').style.display = '';
+        document.getElementById('next-btn').focus();
+      }, 1200);
+    }
   }
 }
 
 function startAutoNext(sec) {
   var hint = document.getElementById('auto-next-hint');
   hint.style.display = '';
-  hint.textContent = 'Auto next in ' + sec + 's...';
-  var cd = sec;
+  var cdWhole = Math.ceil(sec);
+  hint.textContent = 'Auto next in ' + cdWhole + 's...';
+  var cd = cdWhole;
   var iv = setInterval(function() {
     cd--;
     if (cd <= 0) { clearInterval(iv); hint.style.display = 'none'; }
@@ -2149,6 +2322,7 @@ function continueGame() {
 
 function quitRound() {
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  if (survivalMode) { survivalEnd(); return; }
   var answered = roundResults.length;
   if (answered > 0) showResults();
   else goHome();
@@ -2297,9 +2471,10 @@ document.addEventListener('keydown', function(e) {
     if (!document.getElementById('game-screen').classList.contains('hidden')) {
       if (reviewActive) { closeReview(); return; }
       if (!isShowingResult) checkAnswer();
+      else { nextWord(); }
     }
   }
-  if (e.key === 'Shift' && e.location === 2) {
+  if (e.key === 'Shift') {
     if (document.getElementById('game-screen').classList.contains('hidden')) return;
     _debugPlus++;
     if (_debugPlusTimer) clearTimeout(_debugPlusTimer);
