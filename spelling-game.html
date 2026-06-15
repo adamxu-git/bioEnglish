@@ -987,23 +987,24 @@ function playTone(freq, duration, type, vol) {
 }
 
 function sfxCorrect() {
-  playTone(880, 0.12, 'sine', 0.12);
-  setTimeout(function() { playTone(1320, 0.15, 'sine', 0.1); }, 80);
+  playTone(880, 0.18, 'sine', 0.35);
+  setTimeout(function() { playTone(1320, 0.22, 'sine', 0.3); }, 100);
 }
 
 function sfxClose() {
-  playTone(660, 0.15, 'triangle', 0.1);
+  playTone(660, 0.22, 'triangle', 0.3);
 }
 
 function sfxWrong() {
-  playTone(220, 0.25, 'sawtooth', 0.08);
+  playTone(220, 0.35, 'sawtooth', 0.25);
+  setTimeout(function() { playTone(180, 0.25, 'sawtooth', 0.2); }, 150);
 }
 
 function sfxStreak(n) {
   var base = 660 + n * 80;
-  playTone(base, 0.1, 'sine', 0.12);
-  setTimeout(function() { playTone(base + 260, 0.1, 'sine', 0.1); }, 60);
-  setTimeout(function() { playTone(base + 440, 0.15, 'sine', 0.08); }, 120);
+  playTone(base, 0.15, 'sine', 0.35);
+  setTimeout(function() { playTone(base + 260, 0.15, 'sine', 0.3); }, 80);
+  setTimeout(function() { playTone(base + 440, 0.2, 'sine', 0.25); }, 160);
 }
 var currentIndex = 0;
 var score = 0;
