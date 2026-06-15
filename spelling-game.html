@@ -22,7 +22,7 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 .dot:hover:not(.current){transform:scale(1.2);}
 .score-board{margin-bottom:16px;font-size:0.85em;color:#888;letter-spacing:0.08em;}
 .score-board b{color:#1a1a1a;font-size:1.2em;}
-.streak-badge{display:inline-block;margin-left:8px;padding:1px 6px;border-radius:2px;font-size:0.72em;font-weight:700;letter-spacing:0.1em;vertical-align:middle;opacity:0;transition:all 0.3s;}
+.streak-badge{display:inline-block;margin-left:8px;padding:1px 6px;border-radius:2px;font-size:0.72em;font-weight:700;letter-spacing:0.1em;vertical-align:middle;opacity:0;transition:all 0.3s;position:relative;top:-2px;}
 .streak-badge.show{opacity:1;}
 .streak-badge.s1{background:#d0ccc5;color:#1a1a1a;border:1px solid #b5b0a8;animation:streakTick 0.25s ease;}
 .streak-badge.s2{background:#b5b0a8;color:#1a1a1a;border:1px solid #999;animation:streakTick 0.3s ease;}
@@ -31,11 +31,13 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 .streak-badge.s5{background:#c88020;color:#fff;border:2px solid #a06010;font-size:0.88em;padding:3px 14px;animation:streakSlam 0.5s cubic-bezier(0.17,0.89,0.32,1.28);}
 .streak-badge.s7{background:#2a7a2a;color:#fff;border:2px solid #1a5a1a;font-size:1em;padding:4px 16px;animation:streakBoom 0.6s cubic-bezier(0.17,0.89,0.32,1.28);text-shadow:0 0 8px rgba(42,122,42,0.5);}
 .streak-badge.s10{background:linear-gradient(135deg,#c44,#e8a040);color:#fff;border:2px solid #a03030;font-size:1.1em;padding:5px 18px;animation:streakMega 0.7s cubic-bezier(0.17,0.89,0.32,1.28);text-shadow:0 0 12px rgba(255,255,255,0.4);}
+.streak-badge.s9{background:#2a7a2a;color:#fff;border:2px solid #1a5a1a;font-size:0.95em;padding:3px 14px;animation:streakBoom 0.5s cubic-bezier(0.17,0.89,0.32,1.28),streakShake 0.15s 0.5s linear infinite;}
 @keyframes streakTick{0%{transform:scale(0.5);opacity:0;}60%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
 @keyframes streakBounce{0%{transform:scale(0.3);opacity:0;}50%{transform:scale(1.3);}70%{transform:scale(0.9);}100%{transform:scale(1);opacity:1;}}
 @keyframes streakSlam{0%{transform:scale(2.5) rotate(-8deg);opacity:0;}40%{transform:scale(0.85) rotate(2deg);opacity:1;}60%{transform:scale(1.15) rotate(-1deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
 @keyframes streakBoom{0%{transform:scale(3) rotate(-12deg);opacity:0;}30%{transform:scale(0.8) rotate(3deg);opacity:1;}50%{transform:scale(1.3) rotate(-2deg);}70%{transform:scale(0.95) rotate(1deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
 @keyframes streakMega{0%{transform:scale(4) rotate(-15deg);opacity:0;filter:brightness(2);}25%{transform:scale(0.7) rotate(5deg);opacity:1;filter:brightness(1.5);}45%{transform:scale(1.5) rotate(-3deg);filter:brightness(1.2);}65%{transform:scale(0.9) rotate(1deg);filter:brightness(1);}100%{transform:scale(1) rotate(0);opacity:1;filter:brightness(1);}}
+@keyframes streakShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-2px) rotate(-1deg);}75%{transform:translateX(2px) rotate(1deg);}}
 @keyframes scoreFlash{0%{transform:scale(1.6);opacity:0.6;}100%{transform:scale(1);opacity:1;}}
 @keyframes scoreBigFlash{0%{transform:scale(2.2);opacity:0.5;}50%{transform:scale(1.1);opacity:1;}100%{transform:scale(1);opacity:1;}}
 @keyframes scoreMegaFlash{0%{transform:scale(3);opacity:0.3;text-shadow:0 0 20px #c44,0 0 40px #e8a040;}40%{transform:scale(0.9);opacity:1;text-shadow:0 0 10px #c44;}100%{transform:scale(1);opacity:1;text-shadow:none;}}
@@ -1544,6 +1546,12 @@ function checkAnswer() {
     doSfx = true;
     scoreAnim = 'scoreMegaFlash 0.6s ease';
     scoreEl.style.color = '#c44';
+  } else if (streak >= 9) {
+    badge.textContent = streak + 'x STREAK!!';
+    cls += ' show s9';
+    doSfx = true;
+    scoreAnim = 'scoreBigFlash 0.4s ease';
+    scoreEl.style.color = '#2a7a2a';
   } else if (streak >= 7) {
     badge.textContent = streak + 'x STREAK!!';
     cls += ' show s7';
@@ -1560,12 +1568,9 @@ function checkAnswer() {
     badge.textContent = streak + 'x STREAK';
     cls += ' show s3';
     scoreAnim = 'scoreFlash 0.3s ease';
-  } else if (streak >= 2) {
-    badge.textContent = streak + 'x';
-    cls += ' show s2';
-  } else if (streak >= 1) {
-    badge.textContent = '1x';
+  } else {
     cls += ' show s1';
+    badge.textContent = '';
   }
   badge.className = cls;
   if (doSfx) sfxStreak(streak);
