@@ -166,10 +166,30 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 .timer-fill.warning{background:#c88020;}
 .timer-fill.danger{background:#c44;}
 .timer-text{font-size:0.78em;color:#888;letter-spacing:0.08em;margin-bottom:8px;}
+.survival-timer-wrap{max-width:420px;margin:0 auto 14px;text-align:center;}
+.survival-time{font-size:2.4em;font-weight:700;letter-spacing:0.04em;color:#1a1a1a;transition:color 0.3s;}
+.survival-time.warning{color:#c88020;}
+.survival-time.danger{color:#c44;}
+.survival-score-badge{font-size:0.82em;color:#888;letter-spacing:0.1em;margin-top:2px;}
+.survival-score-badge b{font-size:1.2em;color:#1a1a1a;}
+.survival-bonus{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);font-size:1.1em;font-weight:700;pointer-events:none;opacity:0;z-index:100;animation:bonusFloat 0.8s ease forwards;}
+.survival-bonus.plus{color:#2a7a2a;}
+.survival-bonus.close-plus{color:#c88020;}
+@keyframes bonusFloat{0%{opacity:1;transform:translate(-50%,-50%) scale(0.5);}30%{transform:translate(-50%,-80%) scale(1.2);}100%{opacity:0;transform:translate(-50%,-120%) scale(0.8);}}
+.vignette{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;transition:box-shadow 0.5s;}
+.vignette.v1{box-shadow:inset 0 0 80px 20px rgba(196,68,68,0);}
+.vignette.v2{box-shadow:inset 0 0 100px 30px rgba(196,68,68,0.15);}
+.vignette.v3{box-shadow:inset 0 0 120px 40px rgba(196,68,68,0.3);}
+.vignette.v4{box-shadow:inset 0 0 150px 60px rgba(196,68,68,0.5);}
+@keyframes screenShake{0%,100%{transform:translateX(0);}20%{transform:translateX(-3px);}40%{transform:translateX(3px);}60%{transform:translateX(-2px);}80%{transform:translateX(2px);}}
+.screen-shake{animation:screenShake 0.3s ease;}
+@keyframes flashRed{0%{background:#c44;}100%{background:#e8e4dd;}}
+.flash-red{animation:flashRed 0.5s ease;}
 </style>
 </head>
 <body>
 <canvas id="confetti-canvas"></canvas>
+<div class="vignette" id="vignette"></div>
 <div class="container">
 
   <div id="start-screen">
@@ -191,6 +211,10 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
       <div class="mode-card" onclick="startTimed()">
         <div class="mode-card-title">TIMED</div>
         <div class="mode-card-desc">Race the clock. Time limit is based on word length and definition complexity.</div>
+      </div>
+      <div class="mode-card" onclick="startSurvival()">
+        <div class="mode-card-title">SURVIVAL</div>
+        <div class="mode-card-desc">60s total. Correct +5s, close +2s. Speed bonus. How long can you survive?</div>
       </div>
     </div>
     <button class="btn btn-outline" onclick="showWordBank()">WORD BANK</button>
@@ -261,6 +285,12 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
     <div id="timer-wrap" class="hidden">
       <div class="timer-text" id="timer-text"></div>
       <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%;"></div></div>
+    </div>
+    <div id="survival-wrap" class="hidden">
+      <div class="survival-timer-wrap">
+        <div class="survival-time" id="survival-time">60.0</div>
+        <div class="survival-score-badge">WORDS <b id="survival-words">0</b> &middot; SCORE <b id="survival-score">0</b></div>
+      </div>
     </div>
     <div class="review-panel" id="review-panel">
       <div class="review-title" id="review-label">REVIEW</div>
@@ -1295,12 +1325,33 @@ function hideAll() {
   document.getElementById('result-screen').classList.add('hidden');
 }
 
+function showSurvivalBonus(text, cls) {
+  var el = document.createElement('div');
+  el.className = 'survival-bonus ' + cls;
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, 800);
+}
+
+function updateVignette() {
+  var v = document.getElementById('vignette');
+  if (!survivalMode || survivalTime > 20) { v.className = 'vignette'; return; }
+  if (survivalTime <= 5) v.className = 'vignette v4';
+  else if (survivalTime <= 10) v.className = 'vignette v3';
+  else if (survivalTime <= 15) v.className = 'vignette v2';
+  else v.className = 'vignette v1';
+}
+
 function goHome() {
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
   clearTimer();
+  if (survivalInterval) { clearInterval(survivalInterval); survivalInterval = null; }
+  survivalMode = false;
   streak = 0;
   document.getElementById('streak-badge').className = 'streak-badge';
   document.getElementById('streak-badge').textContent = '';
+  document.getElementById('vignette').className = 'vignette';
+  document.getElementById('score-board').style.display = '';
   hideAll();
   document.getElementById('start-screen').classList.remove('hidden');
   updateReviewCount();
@@ -1353,9 +1404,18 @@ var timeLimit = 0;
 var timeLeft = 0;
 var timerInterval = null;
 
+var survivalMode = false;
+var survivalTime = 60;
+var survivalWords = 0;
+var survivalScoreVal = 0;
+var survivalStartTime = 0;
+var survivalInterval = null;
+var survivalCorrectCount = 0;
+
 function startTimed() {
   currentMode = 'TIMED';
   timedMode = true;
+  survivalMode = false;
   var items = [];
   for (var i = 0; i < allWords.length; i++) {
     var w = allWords[i];
@@ -1364,6 +1424,78 @@ function startTimed() {
   }
   var picked = weightedSample(items, 10);
   beginRound(picked);
+}
+
+function startSurvival() {
+  currentMode = 'SURVIVAL';
+  survivalMode = true;
+  timedMode = false;
+  survivalTime = 60;
+  survivalWords = 0;
+  survivalScoreVal = 0;
+  survivalCorrectCount = 0;
+  var items = [];
+  for (var i = 0; i < allWords.length; i++) {
+    var k = allWords[i].word.toLowerCase();
+    items.push({word: allWords[i], weight: 1});
+  }
+  var picked = weightedSample(items, 1);
+  beginRound(picked);
+}
+
+function survivalTick() {
+  var elapsed = (Date.now() - survivalStartTime) / 1000;
+  survivalTime = 60 - elapsed + survivalBonusEarned;
+  if (survivalTime <= 0) {
+    survivalTime = 0;
+    survivalEnd();
+    return;
+  }
+  var el = document.getElementById('survival-time');
+  el.textContent = survivalTime.toFixed(1);
+  el.className = 'survival-time' + (survivalTime <= 5 ? ' danger' : survivalTime <= 15 ? ' warning' : '');
+  updateVignette();
+  if (survivalTime <= 5 && survivalTime > 0) {
+    var frac = survivalTime - Math.floor(survivalTime);
+    if (frac < 0.15) sfxTimerCountdown(Math.ceil(survivalTime));
+  }
+}
+
+var survivalBonusEarned = 0;
+
+function survivalAddTime(sec) {
+  survivalBonusEarned += sec;
+  survivalTime += sec;
+  survivalStartTime += sec * 1000;
+}
+
+function survivalEnd() {
+  if (survivalInterval) { clearInterval(survivalInterval); survivalInterval = null; }
+  clearTimer();
+  isShowingResult = true;
+  document.getElementById('vignette').className = 'vignette';
+  document.body.classList.add('flash-red');
+  setTimeout(function() { document.body.classList.remove('flash-red'); }, 500);
+  sfxTimerCountdown(0);
+  setTimeout(function() { showSurvivalResults(); }, 600);
+}
+
+function showSurvivalResults() {
+  hideAll();
+  document.getElementById('result-screen').classList.remove('hidden');
+  document.getElementById('result-mode-tag').textContent = 'SURVIVAL';
+  document.getElementById('result-correct').textContent = survivalCorrectCount;
+  document.getElementById('result-close').textContent = survivalWords - survivalCorrectCount;
+  document.getElementById('result-wrong').textContent = 0;
+  var details = '<div style="margin-top:20px;max-height:400px;overflow-y:auto;">';
+  details += '<div style="text-align:center;padding:20px 0;">';
+  details += '<div style="font-size:2.6em;font-weight:700;">' + survivalScoreVal + '</div>';
+  details += '<div style="color:#888;font-size:0.78em;letter-spacing:0.1em;margin-top:4px;">TOTAL SCORE</div>';
+  details += '<div style="margin-top:16px;font-size:1.4em;font-weight:700;">' + survivalWords + '</div>';
+  details += '<div style="color:#888;font-size:0.78em;letter-spacing:0.1em;margin-top:4px;">WORDS ANSWERED</div>';
+  details += '</div></div>';
+  document.getElementById('result-details').innerHTML = details;
+  document.getElementById('continue-btn').textContent = 'TRY AGAIN';
 }
 
 function weightedSample(items, n) {
@@ -1396,14 +1528,28 @@ function beginRound(round) {
   userAnswers = [];
   isShowingResult = false;
   if (currentMode !== 'TIMED') timedMode = false;
+  if (currentMode !== 'SURVIVAL') survivalMode = false;
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
   clearTimer();
   hideAll();
   document.getElementById('game-screen').classList.remove('hidden');
   document.getElementById('game-mode-tag').textContent = currentMode;
   document.getElementById('round-total').textContent = currentRound.length;
-  if (timedMode) document.getElementById('timer-wrap').classList.remove('hidden');
-  else document.getElementById('timer-wrap').classList.add('hidden');
+  if (timedMode) { document.getElementById('timer-wrap').classList.remove('hidden'); document.getElementById('survival-wrap').classList.add('hidden'); }
+  else if (survivalMode) { document.getElementById('survival-wrap').classList.remove('hidden'); document.getElementById('timer-wrap').classList.add('hidden'); document.getElementById('progress-bar').innerHTML = ''; document.getElementById('score-board').style.display = 'none'; }
+  else { document.getElementById('timer-wrap').classList.add('hidden'); document.getElementById('survival-wrap').classList.add('hidden'); document.getElementById('score-board').style.display = ''; }
+  if (survivalMode) {
+    survivalBonusEarned = 0;
+    survivalStartTime = Date.now() - (60 - survivalTime) * 1000;
+    document.getElementById('survival-time').textContent = survivalTime.toFixed(1);
+    document.getElementById('survival-words').textContent = survivalWords;
+    document.getElementById('survival-score').textContent = survivalScoreVal;
+    document.getElementById('vignette').className = 'vignette';
+    if (survivalInterval) clearInterval(survivalInterval);
+    survivalInterval = setInterval(survivalTick, 100);
+  } else {
+    document.getElementById('vignette').className = 'vignette';
+  }
   showWord();
 }
 
@@ -1626,7 +1772,7 @@ function showWord() {
   document.getElementById('next-btn').style.display = 'none';
   document.getElementById('auto-next-hint').style.display = 'none';
   buildLetterHint(word.word);
-  buildDots();
+  if (!survivalMode) buildDots();
   if (timedMode) startTimer(calcTimeLimit(word));
 }
 
@@ -1705,6 +1851,34 @@ function checkAnswer() {
 
   if (resultType === 'correct') score++;
   recordResult(word.word, resultType);
+
+  if (survivalMode) {
+    survivalWords++;
+    var timeUsed = (Date.now() - survivalStartTime) / 1000;
+    var bonus = 0;
+    if (resultType === 'correct') {
+      survivalCorrectCount++;
+      var addTime = Math.max(2, 5 - Math.floor(survivalCorrectCount / 5));
+      survivalAddTime(addTime);
+      bonus = addTime;
+      var speedMult = 1;
+      if (timeUsed < 3) speedMult = 3;
+      else if (timeUsed < 5) speedMult = 2;
+      else if (timeUsed < 8) speedMult = 1.5;
+      survivalScoreVal += Math.round(100 * speedMult);
+    } else if (resultType === 'close') {
+      survivalAddTime(2);
+      bonus = 2;
+      survivalScoreVal += 30;
+    } else {
+      survivalScoreVal += 10;
+      document.body.classList.add('screen-shake');
+      setTimeout(function() { document.body.classList.remove('screen-shake'); }, 300);
+    }
+    document.getElementById('survival-words').textContent = survivalWords;
+    document.getElementById('survival-score').textContent = survivalScoreVal;
+    if (bonus > 0) showSurvivalBonus('+' + bonus + 's', resultType === 'correct' ? 'plus' : 'close-plus');
+  }
   currentSpeakWord = word.word;
   setTimeout(function() { speakCurrentWord(); }, 300);
 
@@ -1735,8 +1909,8 @@ function checkAnswer() {
     document.getElementById('result-def').textContent = word.definition;
     setCn(word); setPhonetic(word);
     launchConfetti();
-    buildDots();
-    startAutoNext(2);
+    if (!survivalMode) buildDots();
+    if (!survivalMode) startAutoNext(2);
   } else if (resultType === 'close') {
     card.className = 'word-card close-flash';
     document.getElementById('result-verdict').textContent = 'CLOSE';
@@ -1747,8 +1921,8 @@ function checkAnswer() {
     document.getElementById('result-correct-answer').innerHTML = '';
     document.getElementById('result-def').textContent = word.definition;
     setCn(word); setPhonetic(word);
-    buildDots();
-    startAutoNext(3);
+    if (!survivalMode) buildDots();
+    if (!survivalMode) startAutoNext(3);
   } else {
     card.className = 'word-card wrong-flash';
     document.getElementById('result-verdict').textContent = 'INCORRECT';
@@ -1758,7 +1932,7 @@ function checkAnswer() {
     document.getElementById('result-correct-answer').textContent = word.word;
     document.getElementById('result-def').textContent = word.definition;
     setCn(word); setPhonetic(word);
-    buildDots();
+    if (!survivalMode) buildDots();
     document.getElementById('next-btn').style.display = 'none';
     setTimeout(function() {
       document.getElementById('next-btn').style.display = '';
@@ -1785,8 +1959,20 @@ function nextWord() {
   document.getElementById('auto-next-hint').style.display = 'none';
   closeReview();
   currentIndex++;
-  if (currentIndex >= currentRound.length) showResults();
-  else showWord();
+  if (survivalMode && currentIndex >= currentRound.length) {
+    var items = [];
+    for (var i = 0; i < allWords.length; i++) {
+      var k = allWords[i].word.toLowerCase();
+      items.push({word: allWords[i], weight: 1});
+    }
+    currentRound = weightedSample(items, 5);
+    currentIndex = 0;
+    showWord();
+  } else if (currentIndex >= currentRound.length) {
+    showResults();
+  } else {
+    showWord();
+  }
 }
 
 function showResults() {
@@ -1852,6 +2038,7 @@ function continueGame() {
   if (currentMode === 'SEQUENTIAL') startSequential();
   else if (currentMode === 'RANDOM') startRandom();
   else if (currentMode === 'TIMED') startTimed();
+  else if (currentMode === 'SURVIVAL') startSurvival();
   else startReview();
 }
 
