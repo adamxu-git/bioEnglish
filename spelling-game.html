@@ -2291,12 +2291,12 @@ document.addEventListener('keydown', function(e) {
       if (!isShowingResult) checkAnswer();
     }
   }
-  if (e.key === '+' || e.key === '=') {
+  if (e.key === 'Shift' && e.location === 2) {
     if (document.getElementById('game-screen').classList.contains('hidden')) return;
     _debugPlus++;
     if (_debugPlusTimer) clearTimeout(_debugPlusTimer);
     _debugPlusTimer = setTimeout(function() { _debugPlus = 0; }, 800);
-    if (_debugPlus >= 5) {
+    if (_debugPlus >= 3) {
       _debugPlus = 0;
       var el = document.getElementById('debug-answer');
       if (currentRound.length > 0 && currentIndex < currentRound.length) {
