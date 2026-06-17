@@ -186,7 +186,6 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 .event-freeze{animation:freezeFlash 1.5s ease!important;}
 @keyframes freezeFlash{0%{filter:brightness(2) hue-rotate(180deg);}100%{filter:none;}}
 .event-double .survival-score-badge b{color:#c88020!important;}
-.event-shield .word-card{border-color:#4a90d9!important;box-shadow:0 0 20px rgba(74,144,217,0.3);}
 .event-slow .survival-time{color:#c44!important;animation:slowPulse 1s ease infinite;}
 @keyframes slowPulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
 @keyframes bonusFloat{0%{opacity:1;transform:translate(-50%,-50%) scale(0.5);}20%{transform:translate(-50%,-70%) scale(1.3);}80%{opacity:1;transform:translate(-50%,-110%) scale(1);}100%{opacity:0;transform:translate(-50%,-140%) scale(0.9);}}
@@ -1352,7 +1351,6 @@ function showSurvivalBonus(text, cls) {
 var survivalEventActive = null;
 var survivalEventTimer = null;
 var survivalDoubleScore = false;
-var survivalShieldActive = false;
 var survivalScrambleActive = false;
 var survivalFreeHint = false;
 var survivalFreePass = false;
@@ -1365,7 +1363,6 @@ var survivalEvents = [
   {id:'freeze', name:'TIME FREEZE', icon:'\u2744', desc:'Timer paused 5s', chance:0.10, duration:5000, positive:true},
   {id:'double', name:'DOUBLE SCORE', icon:'\u00d72', desc:'Next 2 words x2 score', chance:0.12, duration:2, positive:true},
   {id:'gift', name:'TIME GIFT', icon:'\uD83C\uDF81', desc:'+10 seconds!', chance:0.08, duration:0, positive:true},
-  {id:'shield', name:'WRONG SHIELD', icon:'\u26e8', desc:'Next wrong costs no time', chance:0.10, duration:1, positive:true},
   {id:'surge', name:'ADRENALINE', icon:'\u26a1', desc:'+8 seconds!', chance:0.07, duration:0, positive:true},
   {id:'frenzy', name:'FRENZY', icon:'\uD83D\uDD25', desc:'+3s per word for 3 words', chance:0.05, duration:3, positive:true},
   {id:'miracle', name:'MIRACLE', icon:'\u2728', desc:'+15 seconds!', chance:0.03, duration:0, positive:true},
@@ -1418,14 +1415,6 @@ function triggerSurvivalEvent(evt) {
   } else if (evt.id === 'gift') {
     survivalAddTime(10);
     survivalEventActive = null;
-  } else if (evt.id === 'shield') {
-    survivalShieldActive = true;
-    document.body.classList.add('event-shield');
-    survivalEventTimer = setTimeout(function() {
-      survivalShieldActive = false;
-      survivalEventActive = null;
-      document.body.classList.remove('event-shield');
-    }, 99999);
   } else if (evt.id === 'surge') {
     survivalAddTime(8);
     survivalEventActive = null;
@@ -1501,7 +1490,6 @@ function goHome() {
   if (survivalEventTimer) { clearTimeout(survivalEventTimer); survivalEventTimer = null; }
   survivalMode = false;
   survivalDoubleScore = false;
-  survivalShieldActive = false;
   survivalScrambleActive = false;
   survivalFreeHint = false;
   survivalFreePass = false;
@@ -1516,7 +1504,6 @@ function goHome() {
   document.getElementById('vignette').className = 'vignette';
   document.body.classList.remove('event-freeze');
   document.body.classList.remove('event-double');
-  document.body.classList.remove('event-shield');
   document.body.classList.remove('event-slow');
   document.body.classList.remove('flash-red');
   document.body.classList.remove('screen-shake');
@@ -1604,7 +1591,6 @@ function startSurvival() {
   survivalScoreVal = 0;
   survivalCorrectCount = 0;
   survivalDoubleScore = false;
-  survivalShieldActive = false;
   survivalScrambleActive = false;
   survivalFreeHint = false;
   survivalFreePass = false;
@@ -2139,11 +2125,6 @@ function checkAnswer() {
       survivalScoreVal += 30;
       maybeSurvivalEvent();
     } else {
-      if (survivalShieldActive) {
-        survivalShieldActive = false;
-        survivalEventActive = null;
-        showSurvivalBonus('SHIELD!', 'plus');
-      }
       survivalScoreVal += 10;
       document.body.classList.add('screen-shake');
       setTimeout(function() { document.body.classList.remove('screen-shake'); }, 300);
