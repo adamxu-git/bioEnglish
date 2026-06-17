@@ -198,6 +198,41 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
 .screen-shake{animation:screenShake 0.3s ease;}
 @keyframes flashRed{0%{background:#c44;}100%{background:#e8e4dd;}}
 .flash-red{animation:flashRed 0.5s ease;}
+.rr-back{position:fixed;left:0;top:0;height:100vh;width:52px;background:#1a1a1a;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:50;transition:background 0.15s;writing-mode:vertical-rl;text-orientation:mixed;}
+.rr-back:hover{background:#333;}
+.rr-back-text{color:#faf8f4;font-family:'IBM Plex Mono',monospace;font-size:0.72em;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;}
+#reading-screen:not(.hidden){padding-left:56px;}
+.rr-wrap{max-width:660px;margin:0 auto;text-align:left;}
+.rr-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.rr-tab{padding:7px 16px;font-size:0.72em;font-family:'IBM Plex Mono',monospace;border:2px solid #b5b0a8;border-radius:2px;background:transparent;color:#888;cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;transition:all 0.15s;font-weight:600;}
+.rr-tab.active{background:#1a1a1a;color:#faf8f4;border-color:#1a1a1a;}
+.rr-tab:hover:not(.active){border-color:#1a1a1a;color:#1a1a1a;}
+.rr-article-info{margin-bottom:24px;padding:18px 22px;background:#faf8f4;border:3px solid #1a1a1a;border-radius:2px;position:relative;}
+.rr-article-info::before{content:'';position:absolute;top:0;left:0;width:6px;height:100%;background:#1a1a1a;}
+.rr-article-title{font-size:1.15em;font-weight:700;letter-spacing:0.04em;margin-bottom:6px;}
+.rr-article-meta{font-size:0.72em;color:#999;letter-spacing:0.12em;text-transform:uppercase;}
+.rr-list{display:flex;flex-direction:column;gap:12px;}
+.rr-card{background:#faf8f4;border:2px solid #d0ccc5;border-radius:2px;padding:18px 22px 14px;transition:all 0.2s;position:relative;}
+.rr-card:hover{border-color:#1a1a1a;transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,0,0,0.08);}
+.rr-card-num{position:absolute;top:8px;right:12px;font-size:0.6em;color:#b5b0a8;font-weight:700;letter-spacing:0.1em;}
+.rr-card-en{font-size:0.9em;line-height:1.8;color:#1a1a1a;}
+.rr-card-cn{font-size:0.82em;line-height:1.7;color:#666;margin-top:10px;display:none;border-top:1px dashed #d0ccc5;padding-top:10px;}
+.rr-card.show-cn .rr-card-cn{display:block;}
+.rr-card.show-cn{border-color:#1a1a1a;background:#faf8f4;}
+.rr-card-words{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.rr-word-tag{display:inline-block;padding:3px 10px;font-size:0.66em;font-family:'IBM Plex Mono',monospace;border:1.5px solid #1a1a1a;border-radius:2px;background:#1a1a1a;color:#faf8f4;letter-spacing:0.04em;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.rr-word-tag:hover{background:#444;border-color:#444;}
+.rr-word-tag.rr-ok{background:#2a7a2a;color:#fff;border-color:#2a7a2a;}
+.rr-word-tag.rr-close{background:#c88020;color:#fff;border-color:#c88020;}
+.rr-word-tag.rr-fail{background:#c44;color:#fff;border-color:#c44;}
+.rr-word-tag.rr-new{background:#b5b0a8;color:#faf8f4;border-color:#b5b0a8;}
+.rr-expand-btn{font-size:0.7em;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;border:1.5px solid #b5b0a8;border-radius:2px;background:transparent;color:#888;cursor:pointer;padding:4px 12px;text-transform:uppercase;transition:all 0.15s;margin-top:10px;display:inline-block;}
+.rr-expand-btn:hover{border-color:#1a1a1a;color:#faf8f4;background:#1a1a1a;}
+.rr-card.show-cn .rr-expand-btn{border-color:#1a1a1a;color:#1a1a1a;background:transparent;}
+.rr-card.show-cn .rr-expand-btn:hover{color:#faf8f4;background:#1a1a1a;}
+.rr-card .hl{background:transparent;color:inherit;padding:0;border-radius:0;font-weight:inherit;font-size:inherit;transition:all 0.15s;}
+.rr-card.hl-active .hl.hl-show{background:#1a1a1a!important;color:#faf8f4!important;padding:1px 4px;border-radius:2px;font-weight:600!important;font-size:0.92em!important;}
+.rr-empty{font-size:0.72em;color:#999;letter-spacing:0.1em;text-transform:uppercase;padding:20px;text-align:center;}
 </style>
 </head>
 <body>
@@ -231,7 +266,19 @@ h1{font-size:2.2em;margin-bottom:4px;letter-spacing:0.2em;font-weight:700;}
       </div>
     </div>
     <button class="btn btn-outline" onclick="showWordBank()">WORD BANK</button>
+    <button class="btn btn-outline btn-sm" onclick="showReadingReview()" style="margin-left:8px;">READING</button>
     <button class="btn btn-outline btn-sm" onclick="showSettings()" style="margin-left:8px;">SETTINGS</button>
+  </div>
+
+  <div id="reading-screen" class="hidden">
+    <div class="rr-back" onclick="hideReading()" style="display:none;"><span class="rr-back-text">BACK</span></div>
+    <h1>READING</h1>
+    <p class="subtitle">ARTICLE REVIEW & SENTENCE PRACTICE</p>
+    <div class="rr-wrap">
+      <div class="rr-tabs" id="rr-tabs"></div>
+      <div class="rr-article-info" id="rr-article-info"></div>
+      <div class="rr-list" id="rr-list"></div>
+    </div>
   </div>
 
   <div id="settings-screen" class="hidden">
@@ -1059,6 +1106,187 @@ var allWords = [
 ];
 </script>
 <!-- WORD DATA END -->
+<!-- ARTICLE DATA BEGIN -->
+<script>
+var allArticles = [
+  {
+    "title": "Cytoplasm: The Dynamic, Mobile Factory",
+    "lesson": "LESSON 1",
+    "sentences": [
+      {"en": "Most of the properties we associate with life are properties of the cytoplasm.", "cn": "我们与生命联系在一起的大多数特性都是细胞质的特性。", "words": ["cytoplasm"]},
+      {"en": "Organelles are suspended within it, supported by the filamentous network of the cytoskeleton.", "cn": "细胞器悬浮其中，由细胞骨架的丝状网络支撑。", "words": ["cytoskeleton"]},
+      {"en": "The eukaryotic cell nucleus is the largest organelle and houses the genetic material (DNA) on chromosomes (In prokaryotes the hereditary material is found in the nucleoid).", "cn": "真核细胞的细胞核是最大的细胞器，容纳染色体上的遗传物质（DNA）（在原核生物中，遗传物质位于拟核中）。", "words": ["nucleus", "chromosome", "nucleoid"]},
+      {"en": "The nucleus also contains one or two organelles-the nucleoli-that play a role in cell division.", "cn": "细胞核还含有一到两个细胞器——核仁——在细胞分裂中发挥作用。", "words": ["nucleoli"]},
+      {"en": "A pore-perforated sac called the nuclear envelope separates the nucleus and its contents from the cytoplasm.", "cn": "一个称为核被膜的多孔囊将细胞核及其内容物与细胞质分隔开。", "words": ["nuclear envelope", "cytoplasm"]},
+      {"en": "Small molecules can pass through the nuclear envelope, but larger molecules such as mRNA and ribosomes must enter and exit via the pores.", "cn": "小分子可以通过核被膜，但较大的分子如mRNA和核糖体必须通过核孔进出。", "words": ["nuclear envelope", "ribosome"]},
+      {"en": "Organelles described in this section include ribosomes, the endoplasmic reticulum, the Golgi complex, vacuoles, lysosomes, mitochondria, and the plastids of plant cells.", "cn": "本节描述的细胞器包括核糖体、内质网、高尔基复合体、液泡、溶酶体、线粒体以及植物细胞的质体。", "words": ["ribosome", "endoplasmic reticulum", "Golgi complex", "vacuole", "lysosome", "mitochondrion", "plastid"]},
+      {"en": "The number of ribosomes within a cell may range from a few hundred to many thousands.", "cn": "细胞内核糖体的数量从几百到数千不等。", "words": ["ribosome"]},
+      {"en": "This quantity reflects the fact that ribosomes are the sites at which amino acids are assembled into proteins for export or for use in cell processes.", "cn": "这个数量反映了核糖体是将氨基酸组装成蛋白质以供输出或用于细胞过程的场所。", "words": ["ribosome"]},
+      {"en": "A complete ribosome is composed of one larger and one smaller subunit.", "cn": "一个完整的核糖体由一个大亚基和一个小亚基组成。", "words": ["ribosome"]},
+      {"en": "Several ribosomes may become attached to a single mRNA strand; such a combination is called a polysome.", "cn": "几个核糖体可以附着在一条mRNA上；这种组合称为多聚核糖体。", "words": ["ribosome", "polysome"]},
+      {"en": "Most cellular proteins are manufactured on ribosomes in the cytoplasm.", "cn": "大多数细胞蛋白质是在细胞质中的核糖体上制造的。", "words": ["ribosome", "cytoplasm"]},
+      {"en": "Exportable proteins and membrane proteins are usually made in association with the endoplasmic reticulum.", "cn": "可输出蛋白质和膜蛋白通常与内质网相关联来制造。", "words": ["endoplasmic reticulum"]},
+      {"en": "The endoplasmic reticulum, a lacy array of membranous sacs, tubules, and vesicles, may be either rough (RER) or smooth (SER).", "cn": "内质网是一种由膜囊、小管和小泡组成的网状结构，可以是粗面（RER）或滑面（SER）。", "words": ["endoplasmic reticulum"]},
+      {"en": "The RER, which is studded with polysomes, also seems to be the source of the nuclear envelope after a cell divides.", "cn": "布满多聚核糖体的粗面内质网似乎也是细胞分裂后核被膜的来源。", "words": ["polysome", "nuclear envelope"]},
+      {"en": "Both types of endoplasmic reticulum serve as compartments within the cell where specific products can be isolated and subsequently shunted to particular areas in or outside the cell.", "cn": "两种类型的内质网都作为细胞内的区室，使特定产物可以被隔离并随后转运到细胞内外特定区域。", "words": ["endoplasmic reticulum"]},
+      {"en": "Transport vesicles may carry exportable molecules from the endoplasmic reticulum to another membranous organelle, the Golgi complex.", "cn": "运输小泡可以将可输出分子从内质网运送到另一个膜性细胞器——高尔基复合体。", "words": ["endoplasmic reticulum", "Golgi complex"]},
+      {"en": "Within the Golgi complex molecules are modified and packaged for export out of the cell or for delivery else where in the cytoplasm.", "cn": "在高尔基复合体内，分子被修饰和包装以便输出细胞外或运送到细胞质其他位置。", "words": ["Golgi complex", "cytoplasm"]},
+      {"en": "The most prominent vacuoles appear in plant cells and serve as water reservoirs and storage sites for sugars and other molecules.", "cn": "最显著的液泡出现在植物细胞中，作为水库和糖及其他分子的储存场所。", "words": ["vacuole"]},
+      {"en": "Vacuoles in animal cells carry out phagocytosis (the intake of particulate matter) and pinocytosis (vacuolar drinking).", "cn": "动物细胞中的液泡执行吞噬作用（摄取颗粒物质）和胞饮作用（液泡饮水）。", "words": ["vacuole", "phagocytosis", "pinocytosis"]},
+      {"en": "A subset of vacuoles is the organelles known as lysosomes, which contain digestive enzymes (packaged in lysosomes in the Golgi complex) that can break down most biological macromolecules.", "cn": "液泡的一个子类是被称为溶酶体的细胞器，含有消化酶（在高尔基复合体中包装入溶酶体），可以分解大多数生物大分子。", "words": ["vacuole", "lysosome", "Golgi complex"]},
+      {"en": "Mitochondria are the sites of energy-yielding chemical reactions in all cells.", "cn": "线粒体是所有细胞中产能化学反应的场所。", "words": ["mitochondrion"]},
+      {"en": "In addition, plant cells contain plastids that utilize light energy to manufacture carbohydrates in the process of photosynthesis.", "cn": "此外，植物细胞含有质体，利用光能在光合作用过程中制造碳水化合物。", "words": ["plastid"]},
+      {"en": "It is on the large surface area provided by the inner cristae of mitochondria that ATP-generating enzymes are located.", "cn": "ATP生成酶位于线粒体内嵴所提供的大表面积上。", "words": ["mitochondrion"]},
+      {"en": "Mitochondria are self-replicating, and probably they are the evolutionary descendants of what were once free-living prokaryotes.", "cn": "线粒体是自我复制的，可能曾经是自由生活的原核生物的进化后裔。", "words": ["mitochondrion"]},
+      {"en": "The most important chromoplasts are chloroplasts-organelles that contain the chlorophyll used in photosynthesis.", "cn": "最重要的有色质体是叶绿体——含有光合作用所用叶绿素的细胞器。", "words": ["chloroplast"]},
+      {"en": "The internal structure of chloroplasts includes stacks of membranes called grana, which are embedded, in a matrix called the stroma.", "cn": "叶绿体的内部结构包括称为基粒的膜堆叠，嵌入在称为基质的基质中。", "words": ["chloroplast", "stroma"]},
+      {"en": "All eukaryotic cells have a cytoskeleton, which is a convoluted latticework of filaments and tubules that appears to fill all available space in the cell and provides support for various other organelles.", "cn": "所有真核细胞都有细胞骨架，它是一种由丝状和小管组成的弯曲网格，似乎填充了细胞中所有可用空间并为各种其他细胞器提供支撑。", "words": ["cytoskeleton"]},
+      {"en": "A large portion of the cytoskeleton consists of threadlike microfilaments composed mainly of the contractile protein actin.", "cn": "细胞骨架的大部分由丝状微丝组成，主要由收缩蛋白肌动蛋白构成。", "words": ["cytoskeleton", "microfilament", "actin"]},
+      {"en": "They are involved in many types of intracellular movements in plant and animal cells.", "cn": "它们参与植物和动物细胞中多种类型的细胞内运动。", "words": []},
+      {"en": "A second protein, myosin, is involve in the contraction of muscle cells.", "cn": "第二种蛋白质，肌球蛋白，参与肌肉细胞的收缩。", "words": ["myosin"]},
+      {"en": "Another main structural component of the cytoskeleton consists of microtubules, which are composed of the globular protein tubulin and together act as scaffolding that provides a stable cell shape.", "cn": "细胞骨架的另一个主要结构成分由微管组成，由球状蛋白微管蛋白构成，共同作为提供稳定细胞形状的支架。", "words": ["cytoskeleton", "microtubule", "tubulin"]},
+      {"en": "Mechanoenzymes such as myosin, dynein, and kinesin interact with the cytoskeletal filaments and tubules to generate forces that cause movements.", "cn": "机械酶如肌球蛋白、动力蛋白和驱动蛋白与细胞骨架丝和小管相互作用，产生导致运动的力。", "words": ["myosin", "dynein"]},
+      {"en": "Some cells also exhibit chemotaxis, the ability to move toward or away from the source of a diffusing chemical.", "cn": "一些细胞还表现出趋化性，即朝向或远离扩散化学物质来源移动的能力。", "words": ["chemotaxis"]},
+      {"en": "Certain eukaryotic cells can swim freely in liquid environments, propelled by whiplike cilia or flagella.", "cn": "某些真核细胞可以在液体环境中自由游动，由鞭毛状的纤毛或鞭毛推进。", "words": ["cilia", "flagella"]},
+      {"en": "Both cilia and fagella have the same internal structure: nine doublets (pairs of microtubules) are arranged in a ring and extend the length of the cilium or flagellum, and two more microtubules run down the center of the ring.", "cn": "纤毛和鞭毛具有相同的内部结构：九个二联体（微管对）排列成环并延伸纤毛或鞭毛的全长，另外两个微管在环的中央延伸。", "words": ["cilia", "flagella", "microtubule"]},
+      {"en": "Every cilium or flagellum grows only from the cell surface where a basal body is located.", "cn": "每个纤毛或鞭毛仅从基体所在的细胞表面生长。", "words": ["cilia", "flagella", "basal body"]},
+      {"en": "Movement is based on the activities of tiny dynein sidearms that extend from one of the microtubules of each doublet.", "cn": "运动基于从每个二联体中一个微管延伸出的微小动力蛋白侧臂的活动。", "words": ["dynein", "microtubule"]},
+      {"en": "The process occurs as myosin proteins attached to organelles push against microfilaments arrayed throughout the cell.", "cn": "这个过程发生在附着在细胞器上的肌球蛋白推压分布在细胞内的微丝时。", "words": ["myosin", "microfilament"]},
+      {"en": "Microsfilaments and microtubules are responsible for almost all major cytoplasmic movements.", "cn": "微丝和微管负责几乎所有主要的细胞质运动。", "words": ["microfilament", "microtubule"]},
+      {"en": "During cell division, microtubules of the spindle-assembled from tubulin subunits near organelles called centrioles-move the chromosomes.", "cn": "在细胞分裂过程中，由称为中心粒的细胞器附近的微管蛋白亚基组装成的纺锤体微管移动染色体。", "words": ["microtubule", "tubulin", "centriole", "chromosome"]}
+    ]
+  },
+  {
+    "title": "Photosynthesis",
+    "lesson": "LESSON 2",
+    "sentences": [
+      {"en": "Photosynthesis occurs only in the chlorophyll-containing cells of green plants, algae, and certain protists and bacteria.", "cn": "光合作用仅发生在含有叶绿素的绿色植物、藻类和某些原生生物及细菌的细胞中。", "words": ["photosynthesis", "chlorophyll"]},
+      {"en": "Overall, it is a process that converts light energy into chemical energy that is stored in the form of molecular bonds.", "cn": "总的来说，它是一个将光能转化为化学能并以分子键形式储存的过程。", "words": []},
+      {"en": "In the first set, called the light-dependent reactions, water molecules are split (oxidized), O2 is released, and ATP and NADPH are formed.", "cn": "第一组称为光依赖反应，水分子被分裂（氧化），释放O2，并形成ATP和NADPH。", "words": ["light-dependent reactions"]},
+      {"en": "These reactions must take place in the presence of light energy.", "cn": "这些反应必须在光能存在下进行。", "words": []},
+      {"en": "In the second set, called light-independent reactions, CO2 is reduced (via the addition of H atoms) to carbohydrate.", "cn": "第二组称为光非依赖反应，CO2被还原（通过加H原子）为碳水化合物。", "words": ["light-independent reactions"]},
+      {"en": "Most of the enzymes and pigments for the light-dependent reactions are embedded in the thylakoid membrane of chloroplasts.", "cn": "光依赖反应的大多数酶和色素嵌入叶绿体的类囊体膜中。", "words": ["light-dependent reactions", "thylakoid"]},
+      {"en": "The dark reactions take place in the stroma.", "cn": "暗反应在基质中进行。", "words": ["stroma"]},
+      {"en": "The energy in light photons in the visible part of the spectrum can be captured by biological molecules to do constructive work.", "cn": "可见光谱中光子的能量可以被生物分子捕获来做建设性工作。", "words": ["photon"]},
+      {"en": "The pigment chlorophyll in plant cells absorbs photons within a particular absorption spectrum-a statement of the amount of light absorbed by chlorophyll at different wavelengths.", "cn": "植物细胞中的色素叶绿素在特定的吸收光谱范围内吸收光子——该光谱描述了叶绿素在不同波长下吸收的光量。", "words": ["chlorophyll", "photon", "absorption spectrum"]},
+      {"en": "The added energy of the photon boosts the energy condition of the molecule from a stable state to a less-stable excited state.", "cn": "光子增加的能量将分子的能量状态从稳定态提升到不太稳定的激发态。", "words": ["photon"]},
+      {"en": "During the light-dependent reactions of photosynthesis, as the absorbing molecule returns to the ground state, the \"excess\" excitation energy is transmitted to other molecules and stored as chemical energy.", "cn": "在光合作用的光依赖反应中，当吸收分子回到基态时，\"多余\"的激发能被传递给其他分子并以化学能形式储存。", "words": ["light-dependent reactions", "photosynthesis"]},
+      {"en": "All photosynthetic organisms contain various classes of chlorophylls and one or more carotenoid (accessory) pigments that also contribute to photosynthesis.", "cn": "所有光合生物都含有各类叶绿素和一种或多种类胡萝卜素（辅助）色素，这些色素也对光合作用有贡献。", "words": ["chlorophyll", "carotenoid", "photosynthesis"]},
+      {"en": "Groups of pigment molecules called antenna compleres are present on thylakoids.", "cn": "称为天线复合体的色素分子群存在于类囊体上。", "words": ["thylakoid"]},
+      {"en": "Light striking any one of the pigment molecules is funneled to a special chlorophyll a molecule, termed a reaction-center chlorophyll, which directly participates in photosynthesis.", "cn": "照射到任何一个色素分子上的光被汇集到一个特殊的叶绿素a分子，称为反应中心叶绿素，它直接参与光合作用。", "words": ["chlorophyll", "photosynthesis"]},
+      {"en": "Most photosynthetic organisms possess two types of reaction-center chlorophylls, P680 and P700, each associated with an electron acceptor molecule and an electron donor molecule.", "cn": "大多数光合生物拥有两种反应中心叶绿素，P680和P700，每种都与一个电子受体分子和一个电子供体分子相关联。", "words": ["chlorophyll"]},
+      {"en": "These aggregations are known respectively as photosystem I (P700) and photosystem I (P680).", "cn": "这些聚集体分别称为光系统I（P700）和光系统II（P680）。", "words": ["photosystem"]},
+      {"en": "The photosystems of the light-dependent reactions are responsible for the packaging of light energy in the chemical compounds ATP and NADPH.", "cn": "光依赖反应的光系统负责将光能包装到化合物ATP和NADPH中。", "words": ["photosystem", "light-dependent reactions"]},
+      {"en": "The production of ATP from the transport of electrons excited by light energy down an electron transport chain is termed photophosphorylation.", "cn": "通过光能激发的电子沿电子传递链运输而产生ATP的过程称为光合磷酸化。", "words": ["photophosphorylation"]},
+      {"en": "The one-way flow of electrons through photosystems I and I is called noncyclic photophosphorylation; plants also derive additional ATP through cyclic photophosphorylation, in which some electrons are shunted back through the electron transport chain between photosystems I and I.", "cn": "电子通过光系统I和II的单向流动称为非循环光合磷酸化；植物还通过循环光合磷酸化获得额外的ATP，其中一些电子被分流回光系统I和II之间的电子传递链。", "words": ["photosystem", "cyclic photophosphorylation"]},
+      {"en": "The ATP generated previously and the NADPH then take part in the light-independent reactions.", "cn": "先前产生的ATP和NADPH随后参与光非依赖反应。", "words": ["light-independent reactions"]},
+      {"en": "In the light-independent reactions of photosynthesis, which are driven by ATP and NADPH, CO2 is converted to carbohydrate.", "cn": "在由ATP和NADPH驱动的光合作用光非依赖反应中，CO2被转化为碳水化合物。", "words": ["light-independent reactions", "photosynthesis"]},
+      {"en": "The reactions are also known as the Calvin-Benson cycle.", "cn": "这些反应也称为卡尔文-本森循环。", "words": ["Calvin-Benson cycle"]},
+      {"en": "Atmospheric CO2 is fixed as it reacts with ribulose biphosphate (RuBP), a reaction that is catalyzed by the enzyme ribulose biphosphate carboxylase.", "cn": "大气CO2与核酮糖二磷酸（RuBP）反应被固定，该反应由核酮糖二磷酸羧化酶催化。", "words": ["ribulose biphosphate"]},
+      {"en": "High levels of oxygen in plant cells can disrupt photosynthesis and can also cause photorespiration-an inefficient form of the dark reactions in which O2 is fixed rather than CO2 and no carbohydrate is produced.", "cn": "植物细胞中高水平的氧会干扰光合作用，还可能导致光呼吸——一种低效的暗反应形式，其中固定的是O2而不是CO2，不产生碳水化合物。", "words": ["photosynthesis", "photorespiration"]},
+      {"en": "Most plants are C3 plants; they experience decreased carbohydrate production under hot, dry conditions as a result of the effects of photorespiration.", "cn": "大多数植物是C3植物；由于光呼吸的影响，它们在炎热干燥条件下碳水化合物产量降低。", "words": ["photorespiration"]}
+    ]
+  },
+  {
+    "title": "Cell Division",
+    "lesson": "LESSON 3",
+    "sentences": [
+      {"en": "Within the nucleus are the chromosomes-tightly coiled strands of DNA and clusters of associated proteins.", "cn": "细胞核内是染色体——紧密卷曲的DNA链和关联蛋白簇。", "words": ["chromosome"]},
+      {"en": "Long stretches of the continuous DNA molecule wind around these clusters of proteins, or histones, forming beadlike complexes known as nucleosomes.", "cn": "连续DNA分子的长片段缠绕在这些蛋白质簇或组蛋白上，形成称为核小体的珠状复合体。", "words": ["histone", "nucleosome"]},
+      {"en": "More coiling and supercoiling produces a dense chromosome structure.", "cn": "更多的卷曲和超卷曲产生了致密的染色体结构。", "words": ["chromosome"]},
+      {"en": "Each long strand of DNA combines with histones and nonhistone proteins to make up the substance chromatin.", "cn": "每个长DNA链与组蛋白和非组蛋白结合构成染色质。", "words": ["histone", "chromatin"]},
+      {"en": "A pictorial display of an organism's chromosomes in the coiled, condensed state is known as a karyotype.", "cn": "生物体染色体在卷曲浓缩状态下的图示显示称为核型。", "words": ["chromosome", "karyotype"]},
+      {"en": "Karyotypes reveal that in most cells all but sex chromosomes are present as two copies, referred to as homologous pairs.", "cn": "核型显示在大多数细胞中，除性染色体外所有染色体都以两个拷贝存在，称为同源对。", "words": ["karyotype", "chromosome", "homologous pair"]},
+      {"en": "Organisms whose cells contain two sets of parental chromosomes are called diploid; those with cells containing a single set of parental chromosomes are called haploid.", "cn": "细胞含有两套亲本染色体的生物称为二倍体；细胞含有单套亲本染色体的生物称为单倍体。", "words": ["chromosome", "diploid", "haploid"]},
+      {"en": "Together the G1, S, and G2 phases are called interphase.", "cn": "G1、S和G2期合称为分裂间期。", "words": ["interphase"]},
+      {"en": "The fourth phase of the cell cycle is M phase, the period of mitosis, during which the replicated chromosomes condense and move and the cell divides.", "cn": "细胞周期的第四个阶段是M期，即有丝分裂期，在此期间复制的染色体凝缩和移动，细胞分裂。", "words": ["mitosis", "chromosome"]},
+      {"en": "It is believed that properties of the cell cytoplasm control the cell cycle, along with external stimulators and inhibitors such as chalones.", "cn": "人们认为细胞质的特性与外部刺激物和抑制物如抑素一起控制细胞周期。", "words": ["chalice"]},
+      {"en": "At the beginning of prophase the chromosomes each consist of two highly condensed chromatids attached to each other at a centromere.", "cn": "在前期开始时，每条染色体由两个高度浓缩的染色单体组成，它们在着丝粒处相连。", "words": ["prophase", "chromosome", "chromatid", "centromere"]},
+      {"en": "As prophase ends and metaphase begins, the condensed chromosomes become associated with the spindle.", "cn": "当前期结束、中期开始时，浓缩的染色体与纺锤体相关联。", "words": ["prophase", "metaphase", "chromosome", "spindle"]},
+      {"en": "Eventually the chromosomes become arranged in a plane (called the metaphase plate) at a right angle to the spindle fibers.", "cn": "最终染色体排列在一个平面（称为赤道板）上，与纺锤丝成直角。", "words": ["chromosome", "metaphase plate", "spindle"]},
+      {"en": "Next, during anaphase, the two sister chromatids of each chromosome split, and one from each pair is drawn toward each pole of the cell.", "cn": "接下来，在后期，每条染色体的两条姐妹染色单体分裂，每对中的一条被拉向细胞的两极。", "words": ["anaphase", "chromatid", "chromosome"]},
+      {"en": "During telophase nuclear envelopes begin to form around each set of chromosomes, and division of the cytoplasm takes place.", "cn": "在末期，核被膜开始围绕每组染色体形成，细胞质分裂发生。", "words": ["telophase", "chromosome"]},
+      {"en": "As mitosis proceeds, the spindle microtubules play a crucial role in ensuring that both paired and separated chromatids move in the right directions at the proper times.", "cn": "在有丝分裂进行过程中，纺锤体微管在确保配对和分离的染色单体在正确时间朝正确方向移动方面起着关键作用。", "words": ["mitosis", "spindle", "chromatid"]},
+      {"en": "Each half of the spindle forms as microtubules extend from each pole of a dividing cell to the region of the metaphase plate.", "cn": "纺锤体的每一半由微管从分裂细胞的每一极延伸到赤道板区域而形成。", "words": ["spindle", "metaphase plate"]},
+      {"en": "During prophase, other microtubules, the centromeric fibers, extend outward from the spindle poles to structures on the chromosomes called kinetochores.", "cn": "在前期间，其他微管即着丝粒纤维从纺锤体极向外延伸到染色体上称为动粒的结构。", "words": ["prophase", "spindle", "chromosome"]},
+      {"en": "During anaphase the fibers begin to shorten, and the chromatids begin to move apart.", "cn": "在后期，纤维开始缩短，染色单体开始分离。", "words": ["anaphase", "chromatid"]},
+      {"en": "In animals it is associated with centriole, while in plant and fungal cells spindle formation is associated with regions called microtubule organizing centers.", "cn": "在动物中它与中心粒相关联，而在植物和真菌细胞中纺锤体形成与称为微管组织中心的区域相关联。", "words": ["centriole", "spindle"]},
+      {"en": "The division of the cell cytoplasm at the end of mitosis is called cytokinesis.", "cn": "有丝分裂末期细胞质的分裂称为胞质分裂。", "words": ["mitosis", "cytokinesis"]},
+      {"en": "In plant cells, which are bounded by a cell wall, cytokinesis involves the building of a new cell plate across the dividing cell at its equator.", "cn": "在由细胞壁包围的植物细胞中，胞质分裂涉及在分裂细胞的赤道处构建新的细胞板。", "words": ["cytokinesis", "cell plate"]},
+      {"en": "Cell wall material is then deposited in the region of the cell plate.", "cn": "然后细胞壁物质沉积在细胞板区域。", "words": ["cell plate"]},
+      {"en": "Meiosis is a special form of cell division that takes place in the reproductive organs that produce sex cells.", "cn": "减数分裂是一种特殊的细胞分裂形式，发生在产生性细胞的生殖器官中。", "words": ["meiosis"]},
+      {"en": "These divisions result in four daughter cells, each with half the number of chromosomes of the parent cell.", "cn": "这些分裂产生四个子细胞，每个子细胞的染色体数量是母细胞的一半。", "words": ["chromosome"]},
+      {"en": "The homologous chromosomes distributed to different progeny cells are not identical.", "cn": "分配到不同子细胞的同源染色体并不相同。", "words": ["chromosome"]},
+      {"en": "As in mitosis two chromatids exist for each chromosome at the beginning of prophase I.", "cn": "与有丝分裂一样，在前期I开始时每条染色体有两条染色单体。", "words": ["mitosis", "chromatid", "chromosome", "prophase"]},
+      {"en": "The homologous pairs stay together when they align on the metaphase plate.", "cn": "当同源对排列在赤道板上时，它们保持在一起。", "words": ["homologous pair", "metaphase plate"]},
+      {"en": "Unlike the anaphase of mitosis, however, during anaphase I the two chromatids of each chromosome stay joined at the centromere and move together to one of the two poles of the cell.", "cn": "然而，与有丝分裂的后期不同，在后期I期间每条染色体的两条染色单体的着丝粒保持连接，一起移动到细胞的两极之一。", "words": ["anaphase", "mitosis", "chromatid", "chromosome", "centromere"]},
+      {"en": "It is this event that results in the halving of the chromosome number in the four daughter cells that result from meiosis.", "cn": "正是这一事件导致减数分裂产生的四个子细胞中染色体数目减半。", "words": ["chromosome", "meiosis"]},
+      {"en": "During telophase I nuclear envelopes enclose the chromosomes in nuclei, and in most species cytokinesis (the first nuclear division) follows.", "cn": "在末期I，核被膜将染色体包裹在核中，大多数物种随后进行胞质分裂（第一次核分裂）。", "words": ["telophase", "chromosome", "cytokinesis"]},
+      {"en": "The second nuclear division begins with metaphase II, in which the chromosomes in each daughter cell again align on a metaphase plate.", "cn": "第二次核分裂从中期II开始，其中每个子细胞中的染色体再次排列在赤道板上。", "words": ["metaphase", "chromosome", "metaphase plate"]},
+      {"en": "The centromeres finally divide, and each sister chromatid moves to one of the poles of the spindle.", "cn": "着丝粒最终分裂，每条姐妹染色单体移动到纺锤体的一极。", "words": ["centromere", "chromatid", "spindle"]},
+      {"en": "The next phase is telophase I, followed again by cytokinesis.", "cn": "下一个阶段是末期I，随后再次进行胞质分裂。", "words": ["telophase", "cytokinesis"]},
+      {"en": "The result of the entire process is four haploid cells in which parental chromosomes are randomly distributed.", "cn": "整个过程的结果是四个单倍体细胞，其中亲本染色体随机分布。", "words": ["haploid", "chromosome"]}
+    ]
+  },
+  {
+    "title": "Genetics",
+    "lesson": "LESSON 4",
+    "sentences": [
+      {"en": "Early ideas of inheritance included Hippocrates' theory of pangenesis and August Weismann's germ plasm theory.", "cn": "早期关于遗传的观点包括希波克拉底的泛生论和奥古斯特·魏斯曼的种质学说。", "words": ["pangenesis", "germ plasm theory"]},
+      {"en": "Based on experiments with mice, Weismann proposed that hereditary information in gametes transmitted traits to progeny.", "cn": "基于对小鼠的实验，魏斯曼提出配子中的遗传信息将性状传递给后代。", "words": []},
+      {"en": "Both of these early views incorporated the blending theory: they held that heritable traits of the two parents blend, so that the distinct characteristics of each are lost in offspring.", "cn": "这两种早期观点都包含了融合理论：他们认为双亲的遗传性状会融合，因此每个亲本的特征在后代中消失。", "words": []},
+      {"en": "Gregor Mendel, an Augustinian monk in the monastery at Brunn, Austria, is known as the \"father of genetics\".", "cn": "格雷戈尔·孟德尔，奥地利布吕恩修道院的奥古斯丁修道士，被称为\"遗传学之父\"。", "words": ["gene"]},
+      {"en": "Mendel carried out a series of carefully planned experiments that demonstrated the particulate nature of heredity.", "cn": "孟德尔进行了一系列精心策划的实验，证明了遗传的颗粒性质。", "words": []},
+      {"en": "For each of the characters he studied, Mendel found that one trait was dominant while the other was recessive.", "cn": "对于他研究的每个性状，孟德尔发现一个特征是显性的，另一个是隐性的。", "words": ["dominant", "recessive"]},
+      {"en": "In the second filial generation, the ratio of dominant to recessive was 3:1.", "cn": "在第二子代中，显性与隐性的比例为3:1。", "words": ["dominant", "recessive"]},
+      {"en": "The units Mendel hypothesized are today known as alleles, alternative forms of genes.", "cn": "孟德尔假设的单位今天称为等位基因，即基因的替代形式。", "words": ["allele", "gene"]},
+      {"en": "Genes are the basic units of heredity.", "cn": "基因是遗传的基本单位。", "words": ["gene"]},
+      {"en": "An organism that inherits identical alleles for a trait from each parent is said to be homozygous for that trait; if different alleles for a trait are inherited, the organism is heterozygous for that trait.", "cn": "从每个亲本遗传相同等位基因的生物被称为该性状的纯合子；如果遗传了不同的等位基因，则该生物是该性状的杂合子。", "words": ["allele", "homozygous", "heterozygous"]},
+      {"en": "When an organism is heterozygous for a trait, the resulting phenotype for that trait expresses only the dominant allele.", "cn": "当生物体某性状为杂合时，该性状的表现型只表达显性等位基因。", "words": ["heterozygous", "phenotype", "dominant", "allele"]},
+      {"en": "Thus, the organism's phenotype\u2014its physical appearance and properties\u2014differs from its genotype, which may include both a dominant and a recessive allele.", "cn": "因此，生物体的表现型——其外观和特性——不同于其基因型，基因型可能同时包含显性和隐性等位基因。", "words": ["phenotype", "genotype", "dominant", "recessive", "allele"]},
+      {"en": "A pictorial representation of all possible combinations of a genetic cross is known as a Punnett square.", "cn": "遗传杂交所有可能组合的图示表示称为庞尼特方格。", "words": ["Punnett square"]},
+      {"en": "The results of Mendel's experiments on dominant and recessive inheritance led to Mendel's first law: the law of segregation.", "cn": "孟德尔关于显性和隐性遗传的实验结果导致了孟德尔第一定律：分离定律。", "words": ["dominant", "recessive", "law of segregation"]},
+      {"en": "This law states that for a given trait an organism inherits one allele from each parent.", "cn": "该定律指出，对于一个给定性状，生物体从每个亲本遗传一个等位基因。", "words": ["allele"]},
+      {"en": "To gain evidence for his theory Mendel performed test crosses, mating plants of unknown genotype to plants that were homozygous recessive for the trait of interest.", "cn": "为了获得理论的证据，孟德尔进行了测交，将未知基因型的植物与所研究性状的隐性纯合子植物交配。", "words": ["test cross", "genotype", "homozygous", "recessive"]},
+      {"en": "The ratio of dominant phenotypes (if any) in the progeny makes clear whether the unknown genotype is heterozygous, homozygous dominant, or homozygous recessive.", "cn": "后代中显性表现型的比例（如果有的话）可以清楚地表明未知基因型是杂合子、显性纯合子还是隐性纯合子。", "words": ["dominant", "phenotype", "genotype", "heterozygous", "homozygous", "recessive"]},
+      {"en": "Mendel also performed dihybrid crosses, which enabled him to consider how two traits are inherited relative to one another.", "cn": "孟德尔还进行了双因子杂交，这使他能够考虑两个性状如何相对遗传。", "words": ["dihybrid cross"]},
+      {"en": "This work led to the law of independent assortment, which states that the alleles of genes (governing different characters) are inherited independently.", "cn": "这项工作导致了自由组合定律，该定律指出基因的等位基因（控制不同性状）独立遗传。", "words": ["law of independent assortment", "allele", "gene"]},
+      {"en": "An apparent exception to Mendel's laws is incomplete dominance, a phenomenon in which offspring of a cross exhibit a phenotype that is intermediate between those of the parents.", "cn": "孟德尔定律的一个明显例外是不完全显性，即杂交后代表现出介于双亲之间的表现型的现象。", "words": ["incomplete dominance", "phenotype"]},
+      {"en": "However, incomplete dominance reflects the fact that both alleles for the trait in question exert an effect on the phenotype.", "cn": "然而，不完全显性反映了所研究性状的两个等位基因都对表现型产生影响这一事实。", "words": ["incomplete dominance", "allele", "phenotype"]},
+      {"en": "Experiments to prove this hypothesis were carried out by Thomas Hunt Morgan and his students at Columbia University, in research on the sex chromosomes of fruit flies.", "cn": "证明这一假设的实验由托马斯·亨特·摩尔根及其学生在哥伦比亚大学进行，研究对象是果蝇的性染色体。", "words": ["chromosome"]},
+      {"en": "It also led to the discovery in 1916 by Calvin Bridges of the phenomenon of nondisjunction, in which a chromosome pair fails to segregate during meiosis.", "cn": "它还导致了1916年卡尔文·布里奇斯发现染色体不分离现象，即染色体对在减数分裂期间未能分离。", "words": ["nondisjunction", "chromosome"]}
+    ]
+  },
+  {
+    "title": "DNA and Molecular Genetics",
+    "lesson": "LESSON 5",
+    "sentences": [
+      {"en": "Next, in a series of classic experiments on the effects of mutations in the bread mold Neurospora crassa, Beadle and Tatum explored the one-gene-one-enzyme hypothesis\u2014the idea that each gene codes for a particular enzyme.", "cn": "接下来，在一系列关于面包霉粗糙脉孢菌突变效应的经典实验中，比德尔和塔特姆探索了一基因一酶假说——即每个基因编码一种特定酶的观点。", "words": ["one-gene-one-enzyme hypothesis", "gene"]},
+      {"en": "Their work paved the way for other researchers to elucidate the precise ways in which enzymes affect complex metabolic pathways.", "cn": "他们的工作为其他研究者阐明酶影响复杂代谢途径的精确方式铺平了道路。", "words": []},
+      {"en": "In 1949, in research on the role of hemoglobin in sickle cell anemia, Linus Pauling helped refine the one-gene-one-enzyme hypothesis into the one-gene-one-polypeptide hypothesis.", "cn": "1949年，在关于血红蛋白在镰状细胞贫血中作用的研究中，莱纳斯·鲍林帮助将一基因一酶假说精炼为一基因一多肽假说。", "words": ["one-gene-one-enzyme hypothesis", "one-gene-one-polypeptide hypothesis"]},
+      {"en": "Nucleic acid, originally isolated by Johann Miescher in 1871, was identified as a prime constituent of chromosomes through the use of the red-staining method developed by Feulgen in the early 1900s.", "cn": "核酸最初由约翰·米舍尔于1871年分离，通过福尔根在20世纪初开发的红色染色方法被确定为染色体的主要成分。", "words": ["chromosome"]},
+      {"en": "At about the same time P.A. Levene discovered that DNA contained four nitrogenous bases, each of which was attached to a sugar molecule and a phosphate group\u2014a combination Levene termed a nucleotide.", "cn": "大约在同一时间，P.A.列文发现DNA含有四种含氮碱基，每种碱基都连接着一个糖分子和一个磷酸基团——列文将这种组合称为核苷酸。", "words": []},
+      {"en": "Each DNA nucleotide contains a five-carbon sugar, deoxyribose, attached to one of four bases: adenine, guanine, cytosine, or thymine.", "cn": "每个DNA核苷酸含有一个五碳糖——脱氧核糖，连接四种碱基之一：腺嘌呤、鸟嘌呤、胞嘧啶或胸腺嘧啶。", "words": ["adenine", "guanine", "cytosine", "thymine"]},
+      {"en": "Adenine and guanine molecules are double-ring structures called purines, while cytosine and thymine are single-ring structures called pyrimidines.", "cn": "腺嘌呤和鸟嘌呤分子是双环结构，称为嘌呤；胞嘧啶和胸腺嘧啶是单环结构，称为嘧啶。", "words": ["adenine", "guanine", "purine", "cytosine", "thymine", "pyrimidine"]},
+      {"en": "The molecule made up of a base plus a sugar is termed a nucleoside.", "cn": "由碱基加糖组成的分子称为核苷。", "words": ["nucleoside"]},
+      {"en": "In each molecule of DNA a phosphate group links the five-carbon sugar of one nucleoside to the five-carbon sugar of the next nucleoside in the chain.", "cn": "在每个DNA分子中，磷酸基团将一个核苷的五碳糖与链中下一个核苷的五碳糖连接起来。", "words": ["nucleoside"]},
+      {"en": "Chargaff's rules describe the fact that (1) the amount of adenine is equal to the amount of thymine in DNA, with amount of cytosine equal to that of guanine, and (2) the ratios of A to T and of C to G vary with different species.", "cn": "查加夫法则描述了以下事实：（1）DNA中腺嘌呤的量等于胸腺嘧啶的量，胞嘧啶的量等于鸟嘌呤的量；（2）A与T以及C与G的比率因物种而异。", "words": ["adenine", "thymine", "cytosine", "guanine"]},
+      {"en": "One was the suggestion of Linus Pauling that DNA might have a helical structure held in place by hydrogen bonds, and the other was X-ray diffraction photos of DNA, showing a helical structure with distance between the coils, taken by Franklin and Wilkins.", "cn": "一是莱纳斯·鲍林提出DNA可能具有由氢键固定位置的螺旋结构，另一是富兰克林和威尔金斯拍摄的DNA X射线衍射照片，显示具有螺旋间距的螺旋结构。", "words": ["X-ray diffraction"]},
+      {"en": "Based on this information Watson and Crick proposed the double helix model of DNA\u2014a twisted ladder-like molecule with two outer sugar phosphate chains and rungs formed by nucleotide pairs.", "cn": "基于这些信息，沃森和克里克提出了DNA双螺旋模型——一种扭曲的梯状分子，有两条外侧糖磷酸链和由核苷酸对形成的横档。", "words": ["double helix"]},
+      {"en": "Paired nucleotides, which always occur as A-T or G-C, are linked by hydrogen bonds.", "cn": "配对的核苷酸总是以A-T或G-C的形式出现，由氢键连接。", "words": []},
+      {"en": "Watson and Crick also proposed that genetic information is encoded by the sequence of base pairs along the DNA molecule.", "cn": "沃森和克里克还提出遗传信息由DNA分子沿碱基对的序列编码。", "words": []},
+      {"en": "In their model of DNA structure and function, Watson and Crick hypothesized that DNA replicates itself by \"unzipping\" along the hydrogen bonds joining A to T and C to G.", "cn": "在他们的DNA结构和功能模型中，沃森和克里克假设DNA通过沿连接A与T、C与G的氢键\"解拉链\"来自我复制。", "words": []},
+      {"en": "This model of semiconservative replication\u2014conservative because each new molecule has one half of the former parent molecule\u2014was later confirmed by the work of Meselson and Stahl.", "cn": "这种半保守复制模型——之所以称为保守是因为每个新分子保留了原母分子的一半——后来被梅塞尔森和斯塔尔的实验所证实。", "words": ["semiconservative replication"]},
+      {"en": "In E. coli DNA replication begins with the formation of a bubblelike structure on the circular chromosome that is produced by replication forks.", "cn": "在大肠杆菌中，DNA复制从由复制叉在环形染色体上产生的泡状结构开始。", "words": ["chromosome", "replication fork"]},
+      {"en": "The leading strand is synthesized continuously, while the lagging strand is synthesized in short stretches known as Okazaki fragments.", "cn": "前导链连续合成，而后随链以称为冈崎片段的短片段合成。", "words": ["Okazaki fragment"]},
+      {"en": "The enzyme DNA polymerase links free nucleotides as they line up on the template formed by the original strand of the parent molecule.", "cn": "DNA聚合酶将游离核苷酸在它们排列于母分子原始链形成的模板上时连接起来。", "words": ["DNA polymerase"]},
+      {"en": "In eukaryotes DNA replication follows the same general principles as in prokaryotes.", "cn": "在真核生物中，DNA复制遵循与原核生物相同的基本原则。", "words": []},
+      {"en": "On the long DNA molecules replication proceeds (in two directions at once) from hundreds or thousands of points of origin.", "cn": "在长DNA分子上，复制从数百或数千个起始点同时向两个方向进行。", "words": []}
+    ]
+  }
+];
+</script>
+<!-- ARTICLE DATA END -->
 <script>
 var wordPool = [];
 var currentRound = [];
@@ -1336,6 +1564,7 @@ function hideAll() {
   document.getElementById('start-screen').classList.add('hidden');
   document.getElementById('wordbank-screen').classList.add('hidden');
   document.getElementById('settings-screen').classList.add('hidden');
+  document.getElementById('reading-screen').classList.add('hidden');
   document.getElementById('game-screen').classList.add('hidden');
   document.getElementById('result-screen').classList.add('hidden');
 }
@@ -2516,6 +2745,155 @@ _homeTitle.addEventListener('click', function() {
     }, 1000);
   }
 });
+// ===== READING REVIEW =====
+var rrArticles = null;
+var rrFilter = 'LESSON 1';
+
+function showReadingReview() {
+  hideAll();
+  document.getElementById('reading-screen').classList.remove('hidden');
+  document.querySelector('.rr-back').style.display = 'flex';
+  rrArticles = allArticles;
+  renderReadingReview();
+}
+
+function hideReading() {
+  document.querySelector('.rr-back').style.display = 'none';
+  goHome();
+}
+
+function renderReadingReview() {
+  if (!rrArticles || rrArticles.length === 0) {
+    document.getElementById('rr-tabs').innerHTML = '';
+    document.getElementById('rr-article-info').innerHTML = '<div class="rr-empty">NO ARTICLES FOUND</div>';
+    document.getElementById('rr-list').innerHTML = '';
+    return;
+  }
+
+  var tabs = document.getElementById('rr-tabs');
+  tabs.innerHTML = '';
+  for (var i = 0; i < rrArticles.length; i++) {
+    var art = rrArticles[i];
+    var b = document.createElement('button');
+    b.className = 'rr-tab' + (rrFilter === art.lesson ? ' active' : '');
+    b.textContent = art.lesson;
+    b.setAttribute('data-l', art.lesson);
+    b.onclick = (function(l) { return function() { rrFilter = l; renderReadingReview(); }; })(art.lesson);
+    tabs.appendChild(b);
+  }
+
+  var current = null;
+  for (var i = 0; i < rrArticles.length; i++) {
+    if (rrArticles[i].lesson === rrFilter) { current = rrArticles[i]; break; }
+  }
+  if (!current) { current = rrArticles[0]; rrFilter = current.lesson; }
+
+  document.getElementById('rr-article-info').innerHTML =
+    '<div class="rr-article-title">' + escHtml(current.title) + '</div>' +
+    '<div class="rr-article-meta">' + current.lesson + ' &middot; ' + current.sentences.length + ' sentences</div>';
+
+  var list = document.getElementById('rr-list');
+  list.innerHTML = '';
+  var rrStats = loadStats();
+
+  for (var i = 0; i < current.sentences.length; i++) {
+    var s = current.sentences[i];
+    var card = document.createElement('div');
+    card.className = 'rr-card';
+    card.setAttribute('data-idx', i);
+
+    var enHtml = escHtml(s.en);
+    if (s.words && s.words.length > 0) {
+      for (var w = 0; w < s.words.length; w++) {
+        var word = s.words[w];
+        var re = new RegExp('(\\b' + escRegex(word) + '(s|es|tion|tions)?\\b)', 'gi');
+        enHtml = enHtml.replace(re, '<span class="hl" data-hl-word="' + escHtml(word.toLowerCase()) + '">$1</span>');
+      }
+    }
+
+    var wordsHtml = '';
+    if (s.words && s.words.length > 0) {
+      wordsHtml = '<div class="rr-card-words">';
+      for (var w = 0; w < s.words.length; w++) {
+        var wk = s.words[w].toLowerCase();
+        var tagCls = 'rr-word-tag';
+        var st = rrStats[wk];
+        if (st && st.attempts > 0) {
+          if (st.wrong === 0 && st.close === 0) tagCls += ' rr-ok';
+          else if (st.correct > st.wrong) tagCls += ' rr-close';
+          else tagCls += ' rr-fail';
+        } else {
+          var found = false;
+          for (var a = 0; a < allWords.length; a++) {
+            if (allWords[a].word.toLowerCase() === wk) { found = true; break; }
+          }
+          tagCls += found ? ' rr-new' : ' rr-fail';
+        }
+        wordsHtml += '<span class="' + tagCls + '" data-word="' + escHtml(s.words[w]) + '">' + escHtml(s.words[w]) + '</span>';
+      }
+      wordsHtml += '</div>';
+    }
+
+    card.innerHTML =
+      '<div class="rr-card-num">' + (i + 1) + '</div>' +
+      '<div class="rr-card-en">' + enHtml + '</div>' +
+      '<div class="rr-card-cn">' + escHtml(s.cn) + '</div>' +
+      wordsHtml +
+      '<button class="rr-expand-btn" data-action="cn">\u4e2d\u6587</button>';
+
+    (function(c, idx) {
+      c.querySelector('.rr-expand-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        var btn = c.querySelector('.rr-expand-btn');
+        if (c.classList.contains('show-cn')) {
+          c.classList.remove('show-cn');
+          btn.textContent = '\u4e2d\u6587';
+        } else {
+          c.classList.add('show-cn');
+          btn.textContent = 'HIDE';
+        }
+      });
+
+      var wordTags = c.querySelectorAll('.rr-word-tag');
+      for (var t = 0; t < wordTags.length; t++) {
+        (function(tag) {
+          tag.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var w = tag.getAttribute('data-word');
+            if (w && window.speechSynthesis) speakWord(w);
+          });
+          tag.addEventListener('mouseenter', function() {
+            var w = tag.getAttribute('data-word').toLowerCase();
+            c.classList.add('hl-active');
+            var hls = c.querySelectorAll('.hl');
+            for (var h = 0; h < hls.length; h++) {
+              if (hls[h].getAttribute('data-hl-word') === w) hls[h].classList.add('hl-show');
+              else hls[h].classList.remove('hl-show');
+            }
+          });
+          tag.addEventListener('mouseleave', function() {
+            c.classList.remove('hl-active');
+            var hls = c.querySelectorAll('.hl');
+            for (var h = 0; h < hls.length; h++) hls[h].classList.remove('hl-show');
+          });
+        })(wordTags[t]);
+      }
+    })(card, i);
+
+    list.appendChild(card);
+  }
+}
+
+function escHtml(str) {
+  var d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function escRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 updateReviewCount();
 loadSettings();
 </script>
